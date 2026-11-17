@@ -95,8 +95,10 @@ main:focus { outline: none; }
 
 /* Carrousel d'accueil */
 .hero { position: relative; height: min(80vh, 780px); min-height: 540px; background: #232323; color: #fff; overflow: hidden; }
-.slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 1s ease, visibility 1s; }
-.slide.is-active { opacity: 1; visibility: visible; z-index: 1; }
+/* Fondu enchaîné : la nouvelle photo (is-active) apparaît au-dessus de l'ancienne (is-prev), qui reste pleine dessous */
+.slide { position: absolute; inset: 0; z-index: 0; opacity: 0; visibility: hidden; }
+.slide.is-prev { z-index: 1; opacity: 1; visibility: visible; }
+.slide.is-active { z-index: 2; opacity: 1; visibility: visible; transition: opacity 1.1s cubic-bezier(.4, 0, .2, 1); }
 /* Décors dessinés : une version PC, une version téléphone */
 .scene { position: absolute; inset: 0; overflow: hidden; }
 .scene svg { width: 100%; height: 100%; display: block; }
@@ -106,8 +108,9 @@ main:focus { outline: none; }
 /* Photo du carrousel et nom du club qui défile */
 .slide__media { position: absolute; inset: 0; overflow: hidden; }
 .slide__media picture, .slide__media picture img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.slide__media picture img { object-fit: cover; object-position: center 30%; transform: scale(1.07); }
-.slide.is-active .slide__media picture img { animation: drift 10s ease-out forwards; }
+.slide__media picture img { object-fit: cover; object-position: center 30%; transform: scale(1.06); }
+/* Zoom lent : il continue pendant que la photo s'efface (pas de retour brusque) et se réinitialise une fois cachée */
+.slide.is-active .slide__media picture img, .slide.is-prev .slide__media picture img { transform: scale(1); transition: transform 8s cubic-bezier(.25, .1, .25, 1); }
 @keyframes drift { to { transform: scale(1); } }
 .slide__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5,6,10,.82) 0%, rgba(5,6,10,.5) 32%, rgba(5,6,10,0) 58%), linear-gradient(0deg, rgba(5,6,10,.55) 0%, rgba(5,6,10,0) 24%), linear-gradient(180deg, rgba(5,6,10,.45) 0%, rgba(5,6,10,0) 22%); }
 .marquee { position: absolute; z-index: 1; top: 14px; left: 0; right: 0; overflow: hidden; pointer-events: none; user-select: none; }
@@ -135,16 +138,9 @@ main:focus { outline: none; }
 .slide.is-active .slide__art { animation: art 1.1s var(--ease) .2s forwards; }
 @keyframes art { from { opacity: 0; transform: translateY(50px) rotate(9deg); } to { opacity: 1; transform: rotate(3deg); } }
 .slide__art:hover .frame img { transform: scale(1.05); }
-.slide__txt > * { opacity: 0; transform: translateY(26px); }
-.slide.is-active .slide__txt > * { animation: rise .9s var(--ease) forwards; }
-.slide.is-active .slide__txt > :nth-child(1) { animation-delay: .15s; }
-.slide.is-active .slide__txt > :nth-child(2) { animation-delay: .25s; }
-.slide.is-active .slide__txt > :nth-child(3) { animation-delay: .35s; }
-.slide.is-active .slide__txt > :nth-child(4) { animation-delay: .45s; }
-.slide.is-active .slide__txt > :nth-child(5) { animation-delay: .55s; }
 @keyframes rise { to { opacity: 1; transform: none; } }
-.slide h2 { font-size: clamp(38px, 5.4vw, 72px); letter-spacing: -.03em; line-height: 1; margin-top: 22px; }
-.slide p { margin-top: 20px; font-size: 18px; color: rgba(255,255,255,.82); max-width: 26em; }
+.hero__text h2 { font-size: clamp(38px, 5.4vw, 72px); letter-spacing: -.03em; line-height: 1; margin-top: 22px; }
+.hero__text p { margin-top: 20px; font-size: 18px; color: rgba(255,255,255,.82); max-width: 26em; }
 .slide__price { margin-top: 20px; font-family: var(--display); font-size: 24px; font-weight: 600; display: flex; align-items: baseline; gap: 12px; }
 .slide__price s { font-size: 17px; font-weight: 500; color: rgba(255,255,255,.55); }
 .slide__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
@@ -528,15 +524,15 @@ a.line__name:hover { text-decoration: underline; }
   .slide__in { align-items: flex-end; padding-top: 0; padding-bottom: 26px; }
   .slide__txt { max-width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 12px; width: 100%; }
   .slide__txt > * { grid-column: 1; }
-  .slide .tag { justify-self: start; height: 20px; padding: 0 8px; font-size: 9.5px; }
-  .slide__txt .slide__cta { grid-column: 2; grid-row: 1 / span 4; align-self: end; margin-top: 0; }
+  .hero__text .tag { justify-self: start; height: 20px; padding: 0 8px; font-size: 9.5px; }
+  .slide__txt .slide__cta { grid-column: 2; grid-row: 1; align-self: end; margin-top: 0; }
   .slide__cta .glass-btn--more { display: none; }
   .slide__word { bottom: auto; top: 5%; right: auto; left: 4%; font-size: 30vw; -webkit-text-stroke-width: 1.5px; }
   .sticker { width: 74px; height: 74px; top: -20px; left: -26px; font-size: 11px; padding: 6px; }
   .frame__cap { right: -30px; bottom: 20px; font-size: 12px; padding: 7px 12px; }
   .frame { border-radius: 14px; }
-  .slide h2 { font-size: clamp(17px, 5vw, 28px); line-height: 1.08; margin-top: 6px; letter-spacing: -.01em; }
-  .slide p { display: none; }
+  .hero__text h2 { font-size: clamp(17px, 5vw, 28px); line-height: 1.08; margin-top: 6px; letter-spacing: -.01em; }
+  .hero__text p { display: none; }
   .slide__price { margin-top: 3px; font-size: 14px; gap: 8px; }
   .slide__price s { font-size: 11.5px; }
   .hero__nav { padding-bottom: 4px; }
@@ -589,12 +585,11 @@ a.line__name:hover { text-decoration: underline; }
 .glass-btn__label { display: inline-flex; align-items: center; gap: 10px; }
 .glass-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 /* Une animation sur un parent empêche le navigateur de montrer la photo à travers le verre : les boutons n'en ont pas */
-.slide .slide__txt > .slide__cta { opacity: 1; transform: none; animation: none !important; }
 @media (min-width: 641px) { .slide__txt { max-width: 660px; } }
 @media (max-width: 640px) {
-  .slide .glass-btn { border-radius: 22px; }
-  .slide .glass-btn .glass-surface__content { padding: 0 18px; font-size: 13px; }
-  .slide .glass-btn svg { width: 15px; height: 15px; }
+  .hero .glass-btn { border-radius: 22px; }
+  .hero .glass-btn .glass-surface__content { padding: 0 18px; font-size: 13px; }
+  .hero .glass-btn svg { width: 15px; height: 15px; }
 }
 
 /* Bouton à glisser pour valider la commande */
@@ -604,4 +599,15 @@ a.line__name:hover { text-decoration: underline; }
   .cat { padding: 10px; }
   .cat__label { padding: 7px 12px; border-radius: 10px; }
   .cat__label strong { font-size: 15px; }
+}
+
+/* Couche fixe du carrousel : texte qui change en fondu, boutons qui ne bougent pas */
+.hero__content { position: absolute; inset: 0; z-index: 2; }
+.hero__nav { z-index: 3; }
+.hero__texts { display: grid; }
+.hero__text { grid-area: 1 / 1; align-self: end; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity .45s ease, transform .45s ease, visibility 0s linear .45s; }
+.hero__text.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity .7s ease .35s, transform .9s cubic-bezier(.2, .7, .2, 1) .35s, visibility 0s linear .35s; }
+@media (prefers-reduced-motion: reduce) {
+  .slide.is-active, .hero__text, .hero__text.is-on { transition: none !important; }
+  .slide.is-active .slide__media picture img, .slide.is-prev .slide__media picture img { transition: none !important; }
 }

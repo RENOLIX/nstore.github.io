@@ -41,14 +41,33 @@ function GlassButton({ href, tabIndex, width = 320, className = '', children }) 
   );
 }
 
+const FADE_MS = 1100; // durée du fondu entre deux photos
+
 function HeroSlider() {
   const { byId } = useCatalog();
   const [i, setI] = useState(0);
+  const [prevI, setPrevI] = useState(null); // photo qui reste visible dessous pendant le fondu
   const [paused, setPaused] = useState(false);
+  const current = useRef(0);
+  const fadeTimer = useRef();
   const startX = useRef(null);
   const n = SLIDES.length;
-  const next = () => setI((v) => (v + 1) % n);
-  const prev = () => setI((v) => (v - 1 + n) % n);
+
+  const goTo = (k) => {
+    const from = current.current;
+    if (k === from) return;
+    current.current = k;
+    setPrevI(from);
+    setI(k);
+    clearTimeout(fadeTimer.current);
+    fadeTimer.current = setTimeout(() => setPrevI(null), FADE_MS + 150);
+  };
+  const next = () => goTo((current.current + 1) % n);
+  const prev = () => goTo((current.current - 1 + n) % n);
+  useEffect(() => () => clearTimeout(fadeTimer.current), []);
+
+  const slideProduct = (s) => { const p = byId(s.product); return p && p.active !== false ? p : null; };
+  const active = slideProduct(SLIDES[i]);
 
   return (
     <section className={'hero' + (paused ? ' is-paused' : '')} aria-roledescription="carrousel" aria-label="À la une"
@@ -63,40 +82,49 @@ function HeroSlider() {
       }}
       onKeyDown={(e) => { if (e.key === 'ArrowRight') next(); if (e.key === 'ArrowLeft') prev(); }}>
       <h1 className="sr-only">NStore Football, maillots de football</h1>
-      {SLIDES.map((s, k) => {
-        const p = byId(s.product);
-        const live = p && p.active !== false;
-        const on = k === i;
-        return (
-          <div key={s.product} className={'slide' + (on ? ' is-active' : '')} aria-hidden={!on}>
-            <div className="slide__media">
-              <Photo name={s.img} alt={on ? s.alt : ''} eager />
-              <div className="marquee" aria-hidden="true">
-                <div className="marquee__track">
-                  {Array.from({ length: 12 }, (_, j) => <span key={j}>{s.word}</span>)}
-                </div>
-              </div>
-            </div>
-            <div className="container slide__in">
-              <div className="slide__txt">
-                <span className="tag">{s.tag}{live && p.compareAt ? ` · -${discountPct(p)} %` : ''}</span>
-                <h2>{s.title}</h2>
-                <p>{s.text}</p>
-                {live && <div className="slide__price">{fmt(p.price)}{p.compareAt && <s>{fmt(p.compareAt)}</s>}</div>}
-                <div className="slide__cta">
-                  <GlassButton href={live ? `#/produit/${p.id}` : '#/boutique'} tabIndex={on ? 0 : -1}>Découvrir le maillot <Icon name="arrow" size={18} /></GlassButton>
-                  <GlassButton width={280} className="glass-btn--more" href="#/boutique" tabIndex={on ? 0 : -1}>Toute la collection</GlassButton>
-                </div>
+
+      {/* Photos : la nouvelle apparaît par-dessus l'ancienne, qui reste visible dessous */}
+      {SLIDES.map((s, k) => (
+        <div key={s.product} className={'slide' + (k === i ? ' is-active' : k === prevI ? ' is-prev' : '')} aria-hidden={k !== i}>
+          <div className="slide__media">
+            <Photo name={s.img} alt={k === i ? s.alt : ''} eager />
+            <div className="marquee" aria-hidden="true">
+              <div className="marquee__track">
+                {Array.from({ length: 12 }, (_, j) => <span key={j}>{s.word}</span>)}
               </div>
             </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
+
+      {/* Texte (change en douceur) et boutons (fixes) */}
+      <div className="container slide__in hero__content">
+        <div className="slide__txt">
+          <div className="hero__texts" aria-live="polite">
+            {SLIDES.map((s, k) => {
+              const p = slideProduct(s);
+              return (
+                <div key={s.product} className={'hero__text' + (k === i ? ' is-on' : '')} aria-hidden={k !== i}>
+                  <span className="tag">{s.tag}{p && p.compareAt ? ` · -${discountPct(p)} %` : ''}</span>
+                  <h2>{s.title}</h2>
+                  <p>{s.text}</p>
+                  {p && <div className="slide__price">{fmt(p.price)}{p.compareAt && <s>{fmt(p.compareAt)}</s>}</div>}
+                </div>
+              );
+            })}
+          </div>
+          <div className="slide__cta">
+            <GlassButton href={active ? `#/produit/${active.id}` : '#/boutique'}>Découvrir le maillot <Icon name="arrow" size={18} /></GlassButton>
+            <GlassButton width={280} className="glass-btn--more" href="#/boutique">Toute la collection</GlassButton>
+          </div>
+        </div>
+      </div>
+
       <div className="hero__nav">
         <div className="container hero__nav-in">
           <div className="hero__bars">
             {SLIDES.map((s, k) => (
-              <button key={s.product} className={'bar' + (k === i ? ' is-on' : k < i ? ' is-done' : '')} onClick={() => setI(k)}
+              <button key={s.product} className={'bar' + (k === i ? ' is-on' : k < i ? ' is-done' : '')} onClick={() => goTo(k)}
                 aria-label={`Afficher la diapositive ${k + 1} : ${s.title}`} aria-current={k === i}>
                 <span onAnimationEnd={k === i ? next : undefined} />
               </button>
