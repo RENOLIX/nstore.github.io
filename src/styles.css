@@ -525,7 +525,7 @@ a.line__name:hover { text-decoration: underline; }
   .slide__txt > * { grid-column: 1; }
   .slide .tag { justify-self: start; height: 20px; padding: 0 8px; font-size: 9.5px; }
   .slide__txt .slide__cta { grid-column: 2; grid-row: 1 / span 4; align-self: end; margin-top: 0; }
-  .slide__cta .btn--glass { display: none; }
+  .slide__cta .glass-btn--more { display: none; }
   .slide__word { bottom: auto; top: 5%; right: auto; left: 4%; font-size: 30vw; -webkit-text-stroke-width: 1.5px; }
   .sticker { width: 74px; height: 74px; top: -20px; left: -26px; font-size: 11px; padding: 6px; }
   .frame__cap { right: -30px; bottom: 20px; font-size: 12px; padding: 7px 12px; }
@@ -534,8 +534,9 @@ a.line__name:hover { text-decoration: underline; }
   .slide p { display: none; }
   .slide__price { margin-top: 3px; font-size: 14px; gap: 8px; }
   .slide__price s { font-size: 11.5px; }
-  .slide .slide__cta .btn { height: 34px; padding: 0 14px; font-size: 12px; gap: 6px; }
-  .slide .slide__cta .btn svg { width: 14px; height: 14px; }
+  .slide .glass-btn { height: 36px; }
+  .slide .glass-btn .glass-surface__content { padding: 0 15px; font-size: 12.5px; }
+  .slide .glass-btn svg { width: 14px; height: 14px; }
   .hero__nav { padding-bottom: 4px; }
   .hero .bar { height: 16px; }
   .hero .bar span { height: 2px; }
@@ -579,3 +580,19 @@ a.line__name:hover { text-decoration: underline; }
   .beam { width: 70px; filter: blur(3px); }
 }
 @media (prefers-reduced-motion: reduce) { .feature__lights, .beam, .feature__bloom { animation: none !important; } }
+
+/* Boutons en verre du carrousel (composant GlassSurface) */
+.glass-btn { display: inline-flex; height: 54px; border-radius: 999px; color: #fff; text-decoration: none; transition: transform .25s var(--ease); }
+.glass-btn:hover { transform: translateY(-2px); }
+.glass-btn:active { transform: scale(.98); }
+.glass-btn .glass-surface__content { padding: 0 26px; font-size: 15px; font-weight: 600; white-space: nowrap; }
+.glass-btn__label { display: inline-flex; align-items: center; gap: 10px; text-shadow: 0 1px 8px rgba(0,0,0,.35); }
+.glass-btn--strong .glass-surface__content { font-weight: 700; }
+.glass-btn svg { transition: transform .3s var(--ease); }
+.glass-btn:hover svg { transform: translateX(4px); }
+.glass-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+/* Sur la photo sombre du carrousel, on utilise les reflets « fond sombre » du verre (liserés blancs) */
+.glass-btn { color-scheme: dark; }
+.glass-btn--strong .glass-surface { background-color: rgba(255,255,255,.16); }
+.glass-btn:hover .glass-surface { background-color: rgba(255,255,255,.1); }
+.glass-btn--strong:hover .glass-surface { background-color: rgba(255,255,255,.24); }

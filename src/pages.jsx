@@ -2,12 +2,25 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATS, DEFAULT_SIZES, discountPct, fmt, FREE_SHIP, inCat, PAYMENTS, SHIPPING, SLIDES } from './data.js';
 import { go, useCatalog, useStore } from './store.jsx';
 import { CartLine, EmptyCart, Icon, NewsForm, Photo, ProductCard, PromoBox, Reveal, ShipBar, Summary } from './ui.jsx';
+import GlassSurface from './GlassSurface.jsx';
 
 function useTitle(title) {
   useEffect(() => { document.title = title ? `${title} — NStore Football` : 'NStore Football — Maillots de football'; }, [title]);
 }
 
 /* ================= Accueil ================= */
+// Bouton en verre du carrousel : la photo derrière se voit à travers, déformée sur les bords.
+function GlassButton({ href, tabIndex, strong = false, className = '', children }) {
+  return (
+    <a className={'glass-btn' + (strong ? ' glass-btn--strong' : '') + (className ? ' ' + className : '')} href={href} tabIndex={tabIndex}>
+      <GlassSurface width="100%" height="100%" borderRadius={999} borderWidth={0.07} brightness={50} opacity={0.93}
+        blur={11} displace={0.5} distortionScale={-150} saturation={1.4} backgroundOpacity={strong ? 0.14 : 0.02}>
+        <span className="glass-btn__label">{children}</span>
+      </GlassSurface>
+    </a>
+  );
+}
+
 function HeroSlider() {
   const { byId } = useCatalog();
   const [i, setI] = useState(0);
@@ -51,8 +64,8 @@ function HeroSlider() {
                 <p>{s.text}</p>
                 {live && <div className="slide__price">{fmt(p.price)}{p.compareAt && <s>{fmt(p.compareAt)}</s>}</div>}
                 <div className="slide__cta">
-                  <a className="btn btn--light" href={live ? `#/produit/${p.id}` : '#/boutique'} tabIndex={on ? 0 : -1}>Découvrir le maillot <Icon name="arrow" size={18} /></a>
-                  <a className="btn btn--glass" href="#/boutique" tabIndex={on ? 0 : -1}>Toute la collection</a>
+                  <GlassButton strong href={live ? `#/produit/${p.id}` : '#/boutique'} tabIndex={on ? 0 : -1}>Découvrir le maillot <Icon name="arrow" size={18} /></GlassButton>
+                  <GlassButton className="glass-btn--more" href="#/boutique" tabIndex={on ? 0 : -1}>Toute la collection</GlassButton>
                 </div>
               </div>
             </div>
