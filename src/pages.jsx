@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { byId, CATS, DEFAULT_SIZES, discountPct, fmt, FREE_SHIP, inCat, PRODUCTS, SHIPPING, SLIDES } from './data.js';
-import { go, useStore } from './store.jsx';
+import { CATS, DEFAULT_SIZES, discountPct, fmt, FREE_SHIP, inCat, PAYMENTS, SHIPPING, SLIDES } from './data.js';
+import { go, useCatalog, useStore } from './store.jsx';
 import { CartLine, EmptyCart, Icon, NewsForm, Photo, ProductCard, PromoBox, Reveal, ShipBar, Summary } from './ui.jsx';
 
 function useTitle(title) {
@@ -9,6 +9,7 @@ function useTitle(title) {
 
 /* ================= Accueil ================= */
 function HeroSlider() {
+  const { byId } = useCatalog();
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const startX = useRef(null);
@@ -31,6 +32,7 @@ function HeroSlider() {
       <h1 className="sr-only">NStore Football, maillots de football</h1>
       {SLIDES.map((s, k) => {
         const p = byId(s.product);
+        const live = p && p.active !== false;
         const on = k === i;
         return (
           <div key={s.product} className={'slide' + (on ? ' is-active' : '')} aria-hidden={!on}>
@@ -44,12 +46,12 @@ function HeroSlider() {
             </div>
             <div className="container slide__in">
               <div className="slide__txt">
-                <span className="tag">{s.tag}{p.compareAt ? ` · -${discountPct(p)} %` : ''}</span>
+                <span className="tag">{s.tag}{live && p.compareAt ? ` · -${discountPct(p)} %` : ''}</span>
                 <h2>{s.title}</h2>
                 <p>{s.text}</p>
-                <div className="slide__price">{fmt(p.price)}{p.compareAt && <s>{fmt(p.compareAt)}</s>}</div>
+                {live && <div className="slide__price">{fmt(p.price)}{p.compareAt && <s>{fmt(p.compareAt)}</s>}</div>}
                 <div className="slide__cta">
-                  <a className="btn btn--light" href={`#/produit/${p.id}`} tabIndex={on ? 0 : -1}>Découvrir le maillot <Icon name="arrow" size={18} /></a>
+                  <a className="btn btn--light" href={live ? `#/produit/${p.id}` : '#/boutique'} tabIndex={on ? 0 : -1}>Découvrir le maillot <Icon name="arrow" size={18} /></a>
                   <a className="btn btn--glass" href="#/boutique" tabIndex={on ? 0 : -1}>Toute la collection</a>
                 </div>
               </div>
@@ -93,7 +95,9 @@ const TILES = [['clubs', 'cat-clubs'], ['selections', 'cat-selections'], ['promo
 
 export function Home() {
   useTitle('');
+  const { products: PRODUCTS, byId } = useCatalog();
   const news = PRODUCTS.filter((p) => p.isNew);
+  const barca = byId('barcelone-crop-femme');
   return (
     <>
       <HeroSlider />
@@ -158,7 +162,7 @@ export function Home() {
             <div className="feature__txt">
               <h2>Barça, côté <em>nuit</em>.</h2>
               <p>Le crop top noir qui fond vers le violet, marquages dorés.</p>
-              <div className="feature__price">{fmt(byId('barcelone-crop-femme').price)}</div>
+              {barca && <div className="feature__price">{fmt(barca.price)}</div>}
               <a className="btn btn--violet" href="#/produit/barcelone-crop-femme">
                 <span className="lbl-long">Découvrir le maillot</span><span className="lbl-short">Découvrir</span>
                 <Icon name="arrow" size={18} />
@@ -195,6 +199,7 @@ export function Shop({ params }) {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('pertinence');
   const input = useRef(null);
+  const { products: PRODUCTS } = useCatalog();
   useTitle(cat === 'tous' ? 'Boutique' : CATS[cat]);
   useEffect(() => { if (params.focus) input.current?.focus(); }, [params.focus]);
 
@@ -204,7 +209,7 @@ export function Shop({ params }) {
     if (sort === 'desc') l.sort((a, b) => b.price - a.price);
     if (sort === 'new') l.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
     return l;
-  }, [cat, q, sort]);
+  }, [cat, q, sort, PRODUCTS]);
 
   const chips = [['tous', 'Tous'], ...Object.entries(CATS)];
   return (
@@ -248,14 +253,17 @@ export function Shop({ params }) {
 
 /* ================= Fiche produit ================= */
 export function Product({ id }) {
-  const p = byId(id);
+  const { ready, byId, products: PRODUCTS } = useCatalog();
+  const found = byId(id);
+  const p = found && found.active !== false ? found : null;
   const { add, setLayer } = useStore();
   const [size, setSize] = useState(null);
   const [qty, setQty] = useState(1);
   const [error, setError] = useState('');
   const [zoom, setZoom] = useState(null);
   const sizesRef = useRef(null);
-  useTitle(p ? p.name : 'Page introuvable');
+  useTitle(p ? p.name : ready ? 'Page introuvable' : '');
+  if (!ready) return <div className="container" style={{ minHeight: '60vh' }} />;
   if (!p) return <NotFound />;
 
   const sizes = p.sizes || DEFAULT_SIZES;
@@ -410,22 +418,35 @@ const PAY = {
 
 export function Checkout() {
   useTitle('Commande');
-  const { cart, totals, promo, ship, setShip, placeOrder } = useStore();
+  const { cart, totals, promo, ship, setShip, placeOrder, notify } = useStore();
+  const { byId } = useCatalog();
   const [pay, setPay] = useState('carte');
+  const [sending, setSending] = useState(false);
   const [card, setCard] = useState({ num: '', exp: '', cvc: '' });
   if (!cart.length) return <div className="container"><EmptyCart /></div>;
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const f = Object.fromEntries(new FormData(e.currentTarget));
-    const v = (k) => (f[k] || '').trim();
-    placeOrder({
-      num: 'NS-' + Date.now().toString(36).toUpperCase().slice(-6),
-      email: v('email'), prenom: v('prenom'),
-      adresse: [`${v('prenom')} ${v('nom')}`, v('adresse'), v('complement'), `${v('cp')} ${v('ville')}`, v('pays')].filter(Boolean),
-      ship: SHIPPING[ship], lines: cart, totals, promo, pay
-    });
-    go('#/confirmation');
+    if (sending) return;
+    const f = new FormData(e.currentTarget);
+    const v = (k) => String(f.get(k) || '').trim();
+    const m = SHIPPING[ship];
+    setSending(true);
+    try {
+      await placeOrder({
+        customer: { prenom: v('prenom'), nom: v('nom'), email: v('email'), tel: v('tel') },
+        address: { adresse: v('adresse'), complement: v('complement'), cp: v('cp'), ville: v('ville'), pays: v('pays') },
+        shipping: { method: ship, label: m.label, delay: m.delay, price: totals.shipping },
+        payment: pay,
+        promo,
+        lines: cart.map((l) => { const p = byId(l.id); return { id: l.id, name: p.name, img: p.img, size: l.size, qty: l.qty, unit: p.price }; }),
+        subtotal: totals.sub, discount: totals.discount, total: totals.total
+      });
+      go('#/confirmation');
+    } catch (err) {
+      notify(err.message || 'La commande n\'a pas pu être enregistrée.');
+      setSending(false);
+    }
   };
 
   return (
@@ -503,8 +524,8 @@ export function Checkout() {
           <div className="co-mini">{cart.map((l) => <CartLine key={[l.id, l.size, l.name, l.number].join('|')} l={l} mini />)}</div>
           <PromoBox />
           <div style={{ marginTop: 12 }}><Summary withShipping /></div>
-          <button className="btn btn--primary btn--block" type="submit" style={{ marginTop: 18 }}>
-            <Icon name="lock" size={18} />{pay === 'livraison' ? 'Confirmer la commande' : 'Payer'} · {fmt(totals.total)}
+          <button className="btn btn--primary btn--block" type="submit" style={{ marginTop: 18 }} disabled={sending}>
+            <Icon name="lock" size={18} />{sending ? 'Enregistrement…' : <>{pay === 'livraison' ? 'Confirmer la commande' : 'Payer'} · {fmt(totals.total)}</>}
           </button>
           <p className="legal">En validant, vous acceptez nos conditions générales de vente.</p>
           <p className="sum-note"><Icon name="lock" size={14} />Paiement chiffré et sécurisé</p>
@@ -523,20 +544,21 @@ export function Confirmation() {
     <div className="container">
       <Reveal className="confirm">
         <div className="confirm__icon"><Icon name="check" size={30} /></div>
-        <h1>Merci {o.prenom}, c'est commandé.</h1>
-        <p>Commande <strong>{o.num}</strong>. Un récapitulatif est envoyé à {o.email}.</p>
+        <h1>Merci {o.customer.prenom}, c'est commandé.</h1>
+        <p>Commande <strong>{o.num}</strong>. Un récapitulatif est envoyé à {o.customer.email}.</p>
         <div className="panel">
-          <div className="co-mini">{o.lines.map((l) => <CartLine key={[l.id, l.size, l.name, l.number].join('|')} l={l} mini />)}</div>
-          <div className="sum-row"><span>Sous-total</span><b>{fmt(o.totals.sub)}</b></div>
-          {o.totals.discount > 0 && <div className="sum-row"><span>Code {o.promo}</span><span className="green">- {fmt(o.totals.discount)}</span></div>}
-          <div className="sum-row"><span>{o.ship.label}</span>{o.totals.shipping ? <b>{fmt(o.totals.shipping)}</b> : <span className="green">Offerte</span>}</div>
-          <div className="sum-row"><span>Paiement</span><b>{PAY[o.pay][1]}</b></div>
-          <div className="sum-row sum-row--total"><span>Total TTC</span><strong>{fmt(o.totals.total)}</strong></div>
+          <div className="co-mini">{o.lines.map((l) => <CartLine key={l.id + l.size} l={l} mini />)}</div>
+          <div className="sum-row"><span>Sous-total</span><b>{fmt(o.subtotal)}</b></div>
+          {o.discount > 0 && <div className="sum-row"><span>Code {o.promo}</span><span className="green">- {fmt(o.discount)}</span></div>}
+          <div className="sum-row"><span>{o.shipping.label}</span>{o.shipping.price ? <b>{fmt(o.shipping.price)}</b> : <span className="green">Offerte</span>}</div>
+          <div className="sum-row"><span>Paiement</span><b>{PAYMENTS[o.payment]}</b></div>
+          <div className="sum-row sum-row--total"><span>Total TTC</span><strong>{fmt(o.total)}</strong></div>
           <div className="sum-row" style={{ marginTop: 14, alignItems: 'flex-start' }}>
             <span style={{ display: 'inline-flex', gap: 8 }}><Icon name="pin" size={18} />Livraison</span>
             <span style={{ textAlign: 'right' }}>
-              {o.adresse.map((a) => <span key={a} style={{ display: 'block' }}>{a}</span>)}
-              <span className="muted">{o.ship.delay}</span>
+              {[`${o.customer.prenom} ${o.customer.nom}`, o.address.adresse, o.address.complement, `${o.address.cp} ${o.address.ville}`, o.address.pays]
+                .filter(Boolean).map((a) => <span key={a} style={{ display: 'block' }}>{a}</span>)}
+              <span className="muted">{o.shipping.delay}</span>
             </span>
           </div>
         </div>

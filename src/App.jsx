@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { fmt } from './data.js';
 import { useRoute, useStore } from './store.jsx';
 import { CartLine, EmptyCart, Icon, Logo, NewsForm, ShipBar } from './ui.jsx';
 import { Cart, Checkout, Confirmation, Home, NotFound, Product, Shop } from './pages.jsx';
+
+// L'admin est chargé à part : les visiteurs de la boutique ne téléchargent pas son code.
+const Admin = lazy(() => import('./admin/Admin.jsx'));
 
 function Header({ route }) {
   const { count, bump, setLayer } = useStore();
@@ -175,6 +178,10 @@ export default function App() {
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [layer, setLayer]);
+
+  if (route.name === 'admin') {
+    return <Suspense fallback={<div className="adm-boot" />}><Admin section={route.arg || 'tableau'} /></Suspense>;
+  }
 
   let page;
   switch (route.name) {

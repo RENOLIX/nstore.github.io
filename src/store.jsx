@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { byId, FREE_SHIP, PROMOS, SHIPPING } from './data.js';
+import { FREE_SHIP, SHIPPING } from './data.js';
+import { backend } from './lib/backend.js';
 
 function load(key, def) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
@@ -8,30 +9,82 @@ function save(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* stockage indisponible */ }
 }
 
-export const lineKey = (l) => [l.id, l.size].join('|');
-export const lineUnit = (l) => byId(l.id).price;
+/* ---------- Catalogue : produits et codes promo, chargés depuis le backend ---------- */
+const CatalogCtx = createContext(null);
+export const useCatalog = () => useContext(CatalogCtx);
 
-export function computeTotals(cart, promo, ship) {
-  const sub = cart.reduce((n, l) => n + lineUnit(l) * l.qty, 0);
-  const discount = promo ? Math.round(sub * PROMOS[promo] * 100) / 100 : 0;
-  const after = sub - discount;
+export function CatalogProvider({ children }) {
+  const [products, setProducts] = useState(null);
+  const [promos, setPromos] = useState([]);
+  const [error, setError] = useState('');
+
+  const reload = useCallback(async () => {
+    try {
+      const [p, c] = await Promise.all([backend.listProducts(), backend.listPromos()]);
+      setProducts(p); setPromos(c); setError('');
+    } catch (e) {
+      setProducts((v) => v || []); setError(e.message || 'Chargement impossible.');
+    }
+  }, []);
+  useEffect(() => { reload(); }, [reload]);
+
+  const value = useMemo(() => {
+    const all = products || [];
+    const map = new Map(all.map((p) => [p.id, p]));
+    const rates = Object.fromEntries(promos.filter((p) => p.active).map((p) => [p.code, p.percent / 100]));
+    return {
+      ready: products !== null,
+      error,
+      all,                                            // tous les produits (admin)
+      products: all.filter((p) => p.active !== false), // produits visibles en boutique
+      promos,
+      byId: (id) => map.get(id),
+      promoRate: (code) => rates[code],
+      reload
+    };
+  }, [products, promos, error, reload]);
+
+  return <CatalogCtx.Provider value={value}>{children}</CatalogCtx.Provider>;
+}
+
+/* ---------- Panier ---------- */
+export const lineKey = (l) => [l.id, l.size].join('|');
+
+const cents = (n) => Math.round(n * 100) / 100; // évite les 89,80000000000001 €
+
+export function computeTotals(cart, promo, ship, byId, promoRate) {
+  const sub = cents(cart.reduce((n, l) => n + (byId(l.id)?.price || 0) * l.qty, 0));
+  const rate = promo ? promoRate(promo) || 0 : 0;
+  const discount = cents(sub * rate);
+  const after = cents(sub - discount);
   const priceOf = (k) => (SHIPPING[k].freeOver && after >= FREE_SHIP ? 0 : SHIPPING[k].price);
   const shipping = cart.length ? priceOf(ship) : 0;
-  return { sub, discount, after, shipping, total: after + shipping, priceOf };
+  return { sub, discount, after, shipping, total: cents(after + shipping), priceOf };
 }
 
 const Ctx = createContext(null);
 export const useStore = () => useContext(Ctx);
 
 export function StoreProvider({ children }) {
-  const [cart, setCart] = useState(() => load('nstore_cart', []).filter((l) => byId(l.id)).map(({ id, size, qty }) => ({ id, size, qty })));
-  const [promo, setPromo] = useState(() => { const p = load('nstore_promo', null); return PROMOS[p] ? p : null; });
+  const { ready, byId, promoRate } = useCatalog();
+  const [cart, setCart] = useState(() => load('nstore_cart', []).map(({ id, size, qty }) => ({ id, size, qty })));
+  const [promo, setPromo] = useState(() => load('nstore_promo', null));
   const [ship, setShip] = useState('standard');
   const [layer, setLayer] = useState(null); // 'cart' | 'menu' | 'sizes'
   const [toast, setToast] = useState('');
   const [order, setOrder] = useState(null);
   const [bump, setBump] = useState(0);
   const timer = useRef();
+
+  // Une fois le catalogue chargé : on retire du panier les maillots supprimés ou masqués, et les codes désactivés.
+  useEffect(() => {
+    if (!ready) return;
+    setCart((c) => {
+      const kept = c.filter((l) => byId(l.id) && byId(l.id).active !== false);
+      return kept.length === c.length ? c : kept;
+    });
+    setPromo((p) => (p && promoRate(p) ? p : null));
+  }, [ready, byId, promoRate]);
 
   useEffect(() => save('nstore_cart', cart), [cart]);
   useEffect(() => save('nstore_promo', promo), [promo]);
@@ -57,24 +110,30 @@ export function StoreProvider({ children }) {
   const remove = useCallback((key) => setCart((c) => c.filter((l) => lineKey(l) !== key)), []);
   const applyPromo = useCallback((raw) => {
     const code = (raw || '').trim().toUpperCase();
-    if (PROMOS[code]) { setPromo(code); notify('Code ' + code + ' appliqué.'); return true; }
+    if (promoRate(code)) { setPromo(code); notify('Code ' + code + ' appliqué.'); return true; }
     notify(code ? 'Ce code n\'est pas valide.' : 'Saisissez un code promo.');
     return false;
-  }, [notify]);
-  const placeOrder = useCallback((o) => { setOrder(o); setCart([]); setPromo(null); }, []);
+  }, [notify, promoRate]);
+
+  // Enregistre la commande dans le backend ; la confirmation affiche la version enregistrée.
+  const placeOrder = useCallback(async (o) => {
+    const saved = await backend.createOrder(o);
+    setOrder(saved); setCart([]); setPromo(null);
+    return saved;
+  }, []);
 
   const value = useMemo(() => ({
     cart, promo, ship, layer, toast, order, bump,
     count: cart.reduce((n, l) => n + l.qty, 0),
-    totals: computeTotals(cart, promo, ship),
+    totals: computeTotals(cart, promo, ship, byId, promoRate),
     add, setQty, remove, applyPromo, removePromo: () => setPromo(null),
     setShip, setLayer, notify, placeOrder
-  }), [cart, promo, ship, layer, toast, order, bump, add, setQty, remove, applyPromo, notify, placeOrder]);
+  }), [cart, promo, ship, layer, toast, order, bump, byId, promoRate, add, setQty, remove, applyPromo, notify, placeOrder]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/* Routage par ancre : #/, #/boutique?cat=clubs, #/produit/<id>, #/panier, #/commande, #/confirmation */
+/* Routage par ancre : #/, #/boutique?cat=clubs, #/produit/<id>, #/panier, #/commande, #/confirmation, #/admin/<section> */
 function parse() {
   const [path, qs] = window.location.hash.replace(/^#\/?/, '').split('?');
   const seg = path.split('/').filter(Boolean);

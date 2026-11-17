@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { BASE, byId, CATS, discountPct, fmt, FREE_SHIP } from './data.js';
-import { lineKey, lineUnit, useStore } from './store.jsx';
+import { BASE, CATS, discountPct, fmt, FREE_SHIP } from './data.js';
+import { lineKey, useCatalog, useStore } from './store.jsx';
 
 /* ---------- Icônes SVG ---------- */
 const ICONS = {
@@ -51,8 +51,14 @@ export function Logo({ light = false }) {
   );
 }
 
-/* ---------- Photo : une source PC, une source téléphone ---------- */
+/* ---------- Photo : une source PC, une source téléphone ----------
+   name est soit un nom d'image du dossier public/img (p1 → p1-desktop.jpg / p1-mobile.jpg),
+   soit une adresse complète (image ajoutée depuis l'admin). */
+export const isUrl = (name) => /^(data:|https?:|blob:)/.test(name || '');
 export function Photo({ name, alt = '', eager = false, className, ext = 'jpg' }) {
+  if (isUrl(name)) {
+    return <picture><img className={className} src={name} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" /></picture>;
+  }
   return (
     <picture>
       <source media="(max-width: 640px)" srcSet={`${BASE}img/${name}-mobile.${ext}`} />
@@ -112,14 +118,18 @@ function lineMeta(l) {
 }
 export function CartLine({ l, mini = false }) {
   const { setQty, remove } = useStore();
-  const p = byId(l.id);
+  const { byId } = useCatalog();
+  // l.name / l.img / l.unit : copie enregistrée avec une commande, au cas où le maillot a changé depuis
+  const p = byId(l.id) || (l.name ? { id: l.id, name: l.name, img: l.img, price: l.unit } : null);
+  if (!p) return null;
+  const unit = l.unit ?? p.price;
   const k = lineKey(l);
   if (mini) {
     return (
       <div className="line">
         <div className="line__img"><Photo name={p.img} alt="" /><span className="line__qty">{l.qty}</span></div>
         <div>
-          <div className="line__top"><span className="line__name">{p.name}</span><span className="line__price">{fmt(lineUnit(l) * l.qty)}</span></div>
+          <div className="line__top"><span className="line__name">{p.name}</span><span className="line__price">{fmt(unit * l.qty)}</span></div>
           <div className="line__meta">{lineMeta(l)}</div>
         </div>
       </div>
@@ -134,7 +144,7 @@ export function CartLine({ l, mini = false }) {
             <a className="line__name" href={`#/produit/${p.id}`}>{p.name}</a>
             <div className="line__meta">{lineMeta(l)}</div>
           </div>
-          <span className="line__price">{fmt(lineUnit(l) * l.qty)}</span>
+          <span className="line__price">{fmt(unit * l.qty)}</span>
         </div>
         <div className="line__bottom">
           <div className="qty qty--sm">

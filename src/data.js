@@ -1,8 +1,7 @@
-/* Catalogue NStore Football.
-   Pour ajouter un maillot : déposer ses photos dans public/img (nom-desktop.jpg et nom-mobile.jpg),
-   puis copier un bloc ci-dessous et changer id, img, name, price. */
+/* Catalogue de départ de NStore Football.
+   Ces maillots remplissent la base au premier lancement ; ensuite on les gère depuis la page admin (#/admin). */
 
-export const PRODUCTS = [
+export const SEED_PRODUCTS = [
   { id: 'bayern-munich-domicile', img: 'p1', name: 'Bayern Munich Domicile', cat: 'clubs', league: 'Allemagne', type: 'Domicile',
     price: 89.9, badge: 'Nouveau', isNew: true,
     desc: 'Rouge vif à fines rayures ton sur ton, col et bords de manches blancs soulignés d\'or.' },
@@ -48,8 +47,9 @@ export const SLIDES = [
 
 export const CATS = { clubs: 'Clubs', selections: 'Sélections', promos: 'Promotions' };
 export const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+export const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 export const FREE_SHIP = 100;
-export const PROMOS = { BIENVENUE10: 0.1 };
+export const SEED_PROMOS = [{ code: 'BIENVENUE10', percent: 10, active: true }];
 export const SHIPPING = {
   standard: { label: 'Livraison standard', delay: '2 à 4 jours ouvrés, à domicile', price: 4.9, freeOver: true },
   relais: { label: 'Point relais', delay: '3 à 5 jours ouvrés, près de chez vous', price: 3.9, freeOver: true },
@@ -58,7 +58,16 @@ export const SHIPPING = {
 
 const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 export const fmt = (n) => eur.format(n);
-export const byId = (id) => PRODUCTS.find((p) => p.id === id);
 export const inCat = (p, cat) => cat === 'tous' || (cat === 'promos' ? !!p.compareAt : p.cat === cat);
 export const discountPct = (p) => Math.round((1 - p.price / p.compareAt) * 100);
 export const BASE = import.meta.env.BASE_URL;
+
+/* Statuts de commande, dans l'ordre du traitement */
+export const ORDER_STATUS = {
+  nouvelle: 'Nouvelle',
+  preparation: 'En préparation',
+  expediee: 'Expédiée',
+  livree: 'Livrée',
+  annulee: 'Annulée'
+};
+export const PAYMENTS = { carte: 'Carte bancaire', paypal: 'PayPal', livraison: 'Paiement à la livraison' };
