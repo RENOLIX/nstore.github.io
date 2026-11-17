@@ -36,7 +36,7 @@ main:focus { outline: none; }
 
 .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
 .muted { color: var(--ink-3); }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 8px; z-index: 200; }
 .skip:focus { left: 8px; }
 .icon { flex: none; }

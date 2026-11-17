@@ -359,11 +359,12 @@ function SalesChart({ orders }) {
         </div>
       )}
       {peak <= 0 && <p className="adm-chart__empty">Aucune vente sur la période.</p>}
-      <table className="sr-only">
+      {/* Tableau pour les lecteurs d'écran ; enveloppé dans un bloc car une table ne se réduit pas à 1 px */}
+      <div className="sr-only"><table>
         <caption>Chiffre d'affaires par jour</caption>
         <thead><tr><th>Jour</th><th>Chiffre d'affaires</th><th>Commandes</th></tr></thead>
         <tbody>{days.map((x) => <tr key={x.key}><td>{dayFmt.format(x.d)}</td><td>{fmt(x.total)}</td><td>{x.count}</td></tr>)}</tbody>
-      </table>
+      </table></div>
     </div>
   );
 }
