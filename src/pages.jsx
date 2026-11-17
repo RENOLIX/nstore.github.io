@@ -3,6 +3,7 @@ import { CATS, DEFAULT_SIZES, discountPct, fmt, FREE_SHIP, inCat, PAYMENTS, SHIP
 import { go, useCatalog, useStore } from './store.jsx';
 import { CartLine, EmptyCart, Icon, NewsForm, Photo, ProductCard, PromoBox, Reveal, ShipBar, Summary } from './ui.jsx';
 import GlassSurface from './GlassSurface.jsx';
+import SlideCommit from './SlideCommit.jsx';
 
 function useTitle(title) {
   useEffect(() => { document.title = title ? `${title} — NStore Football` : 'NStore Football — Maillots de football'; }, [title]);
@@ -448,37 +449,70 @@ const PAY = {
   livraison: ['box', 'Paiement à la livraison', 'En espèces ou par carte, à la remise du colis']
 };
 
+// Largeur réelle d'un bloc, pour que le bouton à glisser occupe toute la colonne
+function useWidth(ref, fallback = 320) {
+  const [w, setW] = useState(fallback);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([e]) => setW(Math.round(e.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return w;
+}
+
 export function Checkout() {
   useTitle('Commande');
   const { cart, totals, promo, ship, setShip, placeOrder, notify } = useStore();
   const { byId } = useCatalog();
   const [pay, setPay] = useState('carte');
-  const [sending, setSending] = useState(false);
   const [card, setCard] = useState({ num: '', exp: '', cvc: '' });
-  if (!cart.length) return <div className="container"><EmptyCart /></div>;
+  const [placed, setPlaced] = useState(false);          // commande enregistrée : on garde la page le temps de l'animation
+  const [slideError, setSlideError] = useState('Vérifiez vos informations');
+  const formRef = useRef(null);
+  const slotRef = useRef(null);
+  const slotWidth = useWidth(slotRef);
+  if (!cart.length && !placed) return <div className="container"><EmptyCart /></div>;
 
-  const submit = async (e) => {
-    e.preventDefault();
-    if (sending) return;
-    const f = new FormData(e.currentTarget);
+  const buildOrder = (form) => {
+    const f = new FormData(form);
     const v = (k) => String(f.get(k) || '').trim();
     const m = SHIPPING[ship];
-    setSending(true);
-    try {
-      await placeOrder({
-        customer: { prenom: v('prenom'), nom: v('nom'), email: v('email'), tel: v('tel') },
-        address: { adresse: v('adresse'), complement: v('complement'), cp: v('cp'), ville: v('ville'), pays: v('pays') },
-        shipping: { method: ship, label: m.label, delay: m.delay, price: totals.shipping },
-        payment: pay,
-        promo,
-        lines: cart.map((l) => { const p = byId(l.id); return { id: l.id, name: p.name, img: p.img, size: l.size, qty: l.qty, unit: p.price }; }),
-        subtotal: totals.sub, discount: totals.discount, total: totals.total
-      });
-      go('#/confirmation');
-    } catch (err) {
-      notify(err.message || 'La commande n\'a pas pu être enregistrée.');
-      setSending(false);
+    return {
+      customer: { prenom: v('prenom'), nom: v('nom'), email: v('email'), tel: v('tel') },
+      address: { adresse: v('adresse'), complement: v('complement'), cp: v('cp'), ville: v('ville'), pays: v('pays') },
+      shipping: { method: ship, label: m.label, delay: m.delay, price: totals.shipping },
+      payment: pay,
+      promo,
+      lines: cart.map((l) => { const p = byId(l.id); return { id: l.id, name: p.name, img: p.img, size: l.size, qty: l.qty, unit: p.price }; }),
+      subtotal: totals.sub, discount: totals.discount, total: totals.total
+    };
+  };
+
+  // Appelé quand le bouton arrive au bout. Une promesse rejetée fait revenir le bouton avec le message d'erreur.
+  // (Plus tard, le paiement Stripe se fera ici, avant d'enregistrer la commande.)
+  const confirm = () => {
+    const form = formRef.current;
+    if (!form.checkValidity()) {
+      setSlideError('Vérifiez vos informations');
+      form.reportValidity();
+      return Promise.reject(new Error('Formulaire incomplet'));
     }
+    const order = buildOrder(form);
+    setPlaced(true);
+    return placeOrder(order).catch((err) => {
+      setPlaced(false);
+      setSlideError('Commande refusée');
+      notify(err.message || 'La commande n\'a pas pu être enregistrée.');
+      throw err;
+    });
+  };
+
+  // Entrée dans un champ : on ne commande pas, on indique le bouton à glisser
+  const submit = (e) => {
+    e.preventDefault();
+    if (e.currentTarget.reportValidity()) notify('Glissez le bouton pour valider la commande.');
   };
 
   return (
@@ -488,7 +522,7 @@ export function Checkout() {
         <span className="crumbs__on">Commande</span><Icon name="chevron" size={14} /><span>Confirmation</span>
       </nav>
       <div className="page-head" style={{ paddingTop: 20 }}><h1>Finaliser la commande</h1></div>
-      <form className="cols" onSubmit={submit}>
+      <form className="cols" onSubmit={submit} ref={formRef} noValidate={false}>
         <div>
           <Reveal as="section" className="co-step">
             <h2><i>1</i>Coordonnées</h2>
@@ -556,9 +590,23 @@ export function Checkout() {
           <div className="co-mini">{cart.map((l) => <CartLine key={[l.id, l.size, l.name, l.number].join('|')} l={l} mini />)}</div>
           <PromoBox />
           <div style={{ marginTop: 12 }}><Summary withShipping /></div>
-          <button className="btn btn--primary btn--block" type="submit" style={{ marginTop: 18 }} disabled={sending}>
-            <Icon name="lock" size={18} />{sending ? 'Enregistrement…' : <>{pay === 'livraison' ? 'Confirmer la commande' : 'Payer'} · {fmt(totals.total)}</>}
-          </button>
+          <div className="co-slide" ref={slotRef}>
+            <SlideCommit
+              label={`${pay === 'livraison' ? 'Glisser pour commander' : 'Glisser pour payer'} · ${fmt(totals.total)}`}
+              doneLabel="Commande enregistrée"
+              errorLabel={slideError}
+              onConfirm={confirm}
+              onDone={() => setTimeout(() => go('#/confirmation'), 900)}
+              trackColor="#141414"
+              handleColor="#f5f5f5"
+              successColor="#da0105"
+              dangerColor="#e5484d"
+              width={slotWidth}
+              height={56}
+              radius={28}
+              holdMs={0}
+            />
+          </div>
           <p className="legal">En validant, vous acceptez nos conditions générales de vente.</p>
           <p className="sum-note"><Icon name="lock" size={14} />Paiement chiffré et sécurisé</p>
         </Reveal>
