@@ -212,17 +212,36 @@ main:focus { outline: none; }
 .price s { display: block; color: var(--ink-3); font-weight: 400; font-size: 13px; }
 .price--sale { color: var(--danger); }
 
-/* Bannière duo */
-.duo { position: relative; border-radius: 24px; overflow: hidden; background: #2b2b2b; color: #fff; min-height: 460px; display: flex; align-items: center; }
-.duo { min-height: 520px; }
-.duo__word { bottom: auto; top: 6%; right: 2%; transform: none; font-size: clamp(90px, 15vw, 230px); }
-.duo__art { position: absolute; z-index: 1; right: 7%; top: 50%; width: min(42%, 520px); aspect-ratio: 1.25; transform: translateY(-50%); }
-.duo__art .frame { position: absolute; width: 50%; }
-.duo__f1 { left: 2%; top: 4%; transform: rotate(-6deg); }
-.duo__f2 { right: 2%; bottom: 0; transform: rotate(5deg); }
-.duo__txt { position: relative; z-index: 2; padding: 56px; max-width: 520px; }
-.duo__txt h2 { font-size: clamp(28px, 3.4vw, 44px); margin-top: 20px; }
-.duo__txt p { margin-top: 14px; color: rgba(255,255,255,.8); }
+/* Bannière Barça : décor, show de lumière, maillot détouré au premier plan, texte à gauche */
+.feature { --violet: #8b3dff; --violet-2: #b98bff; --gold: #e8c26a; position: relative; border-radius: 24px; overflow: hidden; background: #0c0518; color: #fff; aspect-ratio: 1672 / 941; isolation: isolate; }
+.feature__stage { position: absolute; inset: 0; transition: transform 1.4s var(--ease); }
+.feature:hover .feature__stage { transform: scale(1.025); }
+.feature__stage > picture, .feature__stage > picture img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.feature__stage > picture img { object-fit: cover; }
+.feature__stage > picture:last-child { z-index: 4; }
+.feature__stage > picture:last-child img { filter: drop-shadow(0 0 1.5px rgba(214,190,255,.55)) drop-shadow(0 24px 40px rgba(6,2,14,.55)); }
+
+/* Faisceaux fins qui balaient le stade, derrière le maillot, avec un flash de temps en temps */
+.feature__lights { position: absolute; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: screen; animation: strobe 11s linear infinite; }
+.beam { position: absolute; top: -3%; left: var(--x); width: clamp(70px, 11vw, 160px); height: 135%; transform-origin: 50% 0; transform: translateX(-50%) rotate(var(--a)); background: linear-gradient(180deg, rgba(255,255,255,.7) 0%, rgba(222,200,255,.32) 22%, rgba(160,100,255,.12) 55%, rgba(139,61,255,0) 85%); clip-path: polygon(49.2% 0, 50.8% 0, 100% 100%, 0 100%); filter: blur(4px); animation: swing var(--t) ease-in-out var(--d) infinite alternate; }
+@keyframes swing { from { transform: translateX(-50%) rotate(calc(var(--a) - var(--s))); } to { transform: translateX(-50%) rotate(calc(var(--a) + var(--s))); } }
+@keyframes strobe { 0%, 72%, 100% { opacity: .62; } 73% { opacity: 1; } 74% { opacity: .25; } 75.5% { opacity: 1; } 77% { opacity: .3; } 79% { opacity: .9; } 84% { opacity: .62; } }
+
+/* Halo violet juste derrière le maillot */
+.feature__bloom { position: absolute; z-index: 2; left: 66%; top: 46%; width: 48%; aspect-ratio: 1.15; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(160,90,255,.55), rgba(139,61,255,.22) 45%, rgba(139,61,255,0) 100%); mix-blend-mode: screen; pointer-events: none; animation: breathe 5s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { opacity: .7; transform: translate(-50%, -50%) scale(.96); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); } }
+.feature__shade { position: absolute; inset: 0; z-index: 3; background: linear-gradient(90deg, rgba(12,5,24,.9) 0%, rgba(12,5,24,.62) 28%, rgba(12,5,24,0) 48%); pointer-events: none; }
+
+.feature__txt { position: absolute; z-index: 5; left: 0; top: 0; bottom: 0; width: 40%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 0 0 0 clamp(20px, 4.5vw, 64px); }
+.feature__txt h2 { font-size: clamp(30px, 4.2vw, 58px); letter-spacing: -.03em; line-height: 1.02; margin-top: 0; }
+.feature__txt h2 em { font-style: normal; color: transparent; background: linear-gradient(90deg, var(--violet-2), var(--gold)); -webkit-background-clip: text; background-clip: text; }
+.feature__txt p { margin-top: 18px; color: rgba(233,220,255,.82); font-size: clamp(14px, 1.3vw, 17px); line-height: 1.6; max-width: 24em; }
+.feature__price { margin-top: 22px; font: 600 clamp(18px, 1.8vw, 24px) var(--display); color: var(--gold); }
+.btn--violet { margin-top: 32px; background: linear-gradient(135deg, #9b4dff, #6a22e0); color: #fff; box-shadow: 0 10px 30px rgba(139,61,255,.45), inset 0 1px 0 rgba(255,255,255,.25); }
+.btn--violet:hover { background: linear-gradient(135deg, #a964ff, #7a33ee); box-shadow: 0 14px 40px rgba(139,61,255,.6), inset 0 1px 0 rgba(255,255,255,.25); }
+.lbl-short { display: none; }
+.btn--violet svg { transition: transform .3s var(--ease); }
+.btn--violet:hover svg { transform: translateX(4px); }
 
 /* Bloc flocage */
 .split { display: grid; grid-template-columns: 1fr 1fr; background: var(--ink); color: #fff; border-radius: 24px; overflow: hidden; }
@@ -487,7 +506,6 @@ a.line__name:hover { text-decoration: underline; }
   .cats { grid-template-columns: 1fr; }
   .cat { aspect-ratio: 1 / .92; }
   .cols { gap: 24px; }
-  .duo__txt { padding: 36px 28px; }
 }
 @media (max-width: 640px) {
   .container { padding: 0 16px; }
@@ -513,17 +531,12 @@ a.line__name:hover { text-decoration: underline; }
   .sticker { width: 74px; height: 74px; top: -20px; left: -26px; font-size: 11px; padding: 6px; }
   .frame__cap { right: -30px; bottom: 20px; font-size: 12px; padding: 7px 12px; }
   .frame { border-radius: 14px; }
-  .duo { min-height: 0; aspect-ratio: auto; display: block; padding-top: 300px; }
-  .duo__art { top: 28px; right: 50%; width: 300px; transform: translateX(50%); }
-  .duo__word { font-size: 24vw; top: 3%; }
   .slide h2 { font-size: clamp(17px, 5vw, 28px); line-height: 1.08; margin-top: 6px; letter-spacing: -.01em; }
   .slide p { display: none; }
   .slide__price { margin-top: 3px; font-size: 14px; gap: 8px; }
   .slide__price s { font-size: 11.5px; }
   .slide .slide__cta .btn { height: 34px; padding: 0 14px; font-size: 12px; gap: 6px; }
   .slide .slide__cta .btn svg { width: 14px; height: 14px; }
-  .duo .slide__cta .btn--glass { display: inline-flex; }
-  .duo .slide__cta .btn { height: 46px; padding: 0 18px; font-size: 14px; }
   .hero__nav { padding-bottom: 4px; }
   .hero .bar { height: 16px; }
   .hero .bar span { height: 2px; }
@@ -551,3 +564,19 @@ a.line__name:hover { text-decoration: underline; }
   .reveal { opacity: 1; transform: none; }
   .bar.is-on span::after { animation: none !important; }
 }
+
+/* Bannière Barça sur téléphone : même photo, texte réduit dans la zone libre à gauche */
+@media (max-width: 640px) {
+  .feature { border-radius: 16px; }
+  .feature__shade { background: linear-gradient(90deg, rgba(12,5,24,.92) 0%, rgba(12,5,24,.7) 30%, rgba(12,5,24,0) 46%); }
+  .feature__txt { width: 37%; padding-left: 14px; }
+  .feature__txt h2 { font-size: clamp(15px, 4.6vw, 22px); line-height: 1.08; }
+  .feature__txt p { display: none; }
+  .feature__price { margin-top: 8px; font-size: 13px; }
+  .feature .btn--violet { margin-top: 12px; height: 30px; padding: 0 12px; font-size: 11.5px; gap: 6px; }
+  .feature .btn--violet svg { width: 13px; height: 13px; }
+  .lbl-long { display: none; }
+  .lbl-short { display: inline; }
+  .beam { width: 70px; filter: blur(3px); }
+}
+@media (prefers-reduced-motion: reduce) { .feature__lights, .beam, .feature__bloom { animation: none !important; } }

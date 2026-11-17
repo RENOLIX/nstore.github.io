@@ -52,11 +52,11 @@ export function Logo({ light = false }) {
 }
 
 /* ---------- Photo : une source PC, une source téléphone ---------- */
-export function Photo({ name, alt = '', eager = false, className }) {
+export function Photo({ name, alt = '', eager = false, className, ext = 'jpg' }) {
   return (
     <picture>
-      <source media="(max-width: 640px)" srcSet={`${BASE}img/${name}-mobile.jpg`} />
-      <img className={className} src={`${BASE}img/${name}-desktop.jpg`} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+      <source media="(max-width: 640px)" srcSet={`${BASE}img/${name}-mobile.${ext}`} />
+      <img className={className} src={`${BASE}img/${name}-desktop.${ext}`} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" />
     </picture>
   );
 }
@@ -90,9 +90,7 @@ export function ProductCard({ p, index = 0 }) {
     <Reveal delay={(index % 4) * 70}>
       <a className="card" href={`#/produit/${p.id}`}>
         <div className="card__media">
-          {p.compareAt
-            ? <span className="card__badge card__badge--sale">-{discountPct(p)} %</span>
-            : p.badge && <span className="card__badge">{p.badge}</span>}
+          {p.compareAt && <span className="card__badge card__badge--sale">-{discountPct(p)} %</span>}
           <Photo name={p.img} alt={`Maillot ${p.name}`} />
           <span className="card__cta">Voir le maillot <Icon name="arrow" size={16} /></span>
         </div>

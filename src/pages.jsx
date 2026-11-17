@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { byId, CATS, DEFAULT_SIZES, discountPct, fmt, FREE_SHIP, inCat, PRODUCTS, SHIPPING, SLIDES } from './data.js';
 import { go, useStore } from './store.jsx';
 import { CartLine, EmptyCart, Icon, NewsForm, Photo, ProductCard, PromoBox, Reveal, ShipBar, Summary } from './ui.jsx';
-import { Stadium } from './art.jsx';
 
 function useTitle(title) {
   useEffect(() => { document.title = title ? `${title} — NStore Football` : 'NStore Football — Maillots de football'; }, [title]);
@@ -85,6 +84,11 @@ const ASSURE = [
   ['box', 'Expédition sous 48 h', 'Colis suivi jusqu\'à chez vous'],
   ['lock', 'Paiement sécurisé', 'Carte, PayPal ou à la livraison']
 ];
+const BEAMS = [
+  ['4%', '-34deg', '9deg', '7s', '0s'], ['4%', '-18deg', '11deg', '8.5s', '-3s'],
+  ['50%', '-6deg', '12deg', '9s', '-1.5s'], ['50%', '8deg', '12deg', '10s', '-5s'],
+  ['96%', '20deg', '11deg', '8s', '-2s'], ['96%', '34deg', '9deg', '7.5s', '-4.5s']
+];
 const TILES = [['clubs', 'cat-clubs'], ['selections', 'cat-selections'], ['promos', 'cat-promos']];
 
 export function Home() {
@@ -138,21 +142,27 @@ export function Home() {
 
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="container">
-          <Reveal className="duo" style={{ '--glow': '#f2b90f' }}>
-            <Stadium deep="#3a0c16" glow="#f2b90f" />
-            <span className="slide__word duo__word" aria-hidden="true">ESPAÑA</span>
-            <div className="duo__art" aria-hidden="true">
-              <span className="frame duo__f1"><Photo name="p7" alt="" /></span>
-              <span className="frame duo__f2"><Photo name="p8" alt="" /></span>
-            </div>
-            <div className="duo__txt">
-              <span className="tag">Sélections · Éditions spéciales</span>
-              <h2>Espagne, en noir ou en bordeaux.</h2>
-              <p>Deux éditions au motif arabesque ton sur ton, relevées de jaune.</p>
-              <div className="slide__cta">
-                <a className="btn btn--light" href="#/produit/espagne-noir">Édition noire</a>
-                <a className="btn btn--glass" href="#/produit/espagne-bordeaux">Édition bordeaux</a>
+          <Reveal className="feature">
+            {/* Décor, lumières, puis le maillot détouré par-dessus : la lumière passe derrière lui */}
+            <div className="feature__stage">
+              <Photo name="promo-barca" alt="Maillot FC Barcelone Crop Top Femme dans un stade baigné de violet" />
+              <div className="feature__lights" aria-hidden="true">
+                {BEAMS.map(([x, a, sw, t, d], k) => (
+                  <i key={k} className="beam" style={{ '--x': x, '--a': a, '--s': sw, '--t': t, '--d': d }} />
+                ))}
               </div>
+              <span className="feature__bloom" aria-hidden="true" />
+              <span className="feature__shade" aria-hidden="true" />
+              <Photo name="promo-barca-cut" ext="webp" />
+            </div>
+            <div className="feature__txt">
+              <h2>Barça, côté <em>nuit</em>.</h2>
+              <p>Le crop top noir qui fond vers le violet, marquages dorés.</p>
+              <div className="feature__price">{fmt(byId('barcelone-crop-femme').price)}</div>
+              <a className="btn btn--violet" href="#/produit/barcelone-crop-femme">
+                <span className="lbl-long">Découvrir le maillot</span><span className="lbl-short">Découvrir</span>
+                <Icon name="arrow" size={18} />
+              </a>
             </div>
           </Reveal>
         </div>
@@ -275,9 +285,7 @@ export function Product({ id }) {
       <div className="pdp">
         <Reveal className="pdp__media">
           <div className={'pdp__stage' + (zoom ? ' is-zoom' : '')} onMouseMove={onMove} onMouseLeave={() => setZoom(null)}>
-            {p.compareAt
-              ? <span className="card__badge card__badge--sale">-{discountPct(p)} %</span>
-              : p.badge && <span className="card__badge">{p.badge}</span>}
+            {p.compareAt && <span className="card__badge card__badge--sale">-{discountPct(p)} %</span>}
             <div className="pdp__zoom" style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined}>
               <Photo name={p.img} alt={`Maillot ${p.name}`} eager />
             </div>
