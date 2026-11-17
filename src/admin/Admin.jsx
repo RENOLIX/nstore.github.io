@@ -169,7 +169,7 @@ function Login({ onDone }) {
   return (
     <div className="adm-login">
       <form className="adm-login__card" onSubmit={submit}>
-        <Logo />
+        <Logo stacked />
         <h1>{setup ? 'Créer le compte administrateur' : 'Espace administrateur'}</h1>
         {!real ? (
           <div className="adm-note">
@@ -206,7 +206,7 @@ function NoAccess({ session, onLogout }) {
   return (
     <div className="adm-login">
       <div className="adm-login__card">
-        <Logo />
+        <Logo stacked />
         <h1>Accès en attente</h1>
         <p className="adm-muted">Le compte {session.user.email} n'a pas encore de rôle. Demandez à un administrateur de vous en attribuer un depuis la page Utilisateurs.</p>
         <button type="button" className="adm-btn adm-btn--ghost adm-btn--block" onClick={onLogout}><I n="logout" />Se déconnecter</button>

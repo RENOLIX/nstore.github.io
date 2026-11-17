@@ -38,15 +38,15 @@ export function Icon({ name, size = 20 }) {
 }
 
 /* ---------- Logo NStore Football ---------- */
-export function Logo({ light = false }) {
+/* Logo NStore Football (images détourées, voir tools/make-logo.mjs).
+   light : version blanc et rouge pour fond sombre ; stacked : logo complet empilé. */
+export function Logo({ light = false, stacked = false }) {
+  if (stacked) return <img className="logo logo--stacked" src={`${BASE}img/logo-full.webp`} alt="NStore Football" width="720" height="435" />;
+  const sfx = light ? '-light' : '';
   return (
     <span className={'logo' + (light ? ' logo--light' : '')}>
-      <svg className="logo__mark" viewBox="0 0 40 40" width="38" height="38" aria-hidden="true">
-        <rect width="40" height="40" rx="10" fill={light ? '#fff' : '#141414'} />
-        <path d="M12.5 28V12L27.5 28V12" fill="none" stroke={light ? '#141414' : '#fff'} strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="31.5" cy="31.5" r="2.3" fill="#3fae78" />
-      </svg>
-      <span className="logo__text"><b>NSTORE</b><i>FOOTBALL</i></span>
+      <img className="logo__mark" src={`${BASE}img/logo-mark${sfx}.webp`} alt="" width="253" height="200" />
+      <img className="logo__word" src={`${BASE}img/logo-word${sfx}.webp`} alt="NStore Football" width="670" height="120" />
     </span>
   );
 }
