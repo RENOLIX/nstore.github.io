@@ -22,7 +22,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
+body { overflow-x: clip; margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
 body.lock { overflow: hidden; }
 img, svg { display: block; max-width: 100%; }
 picture { display: block; }
@@ -294,7 +294,7 @@ main:focus { outline: none; }
 .empty p { color: var(--ink-2); margin: 10px 0 26px; }
 
 /* Fiche produit */
-.pdp { display: grid; grid-template-columns: 1.15fr 1fr; gap: 64px; padding: 28px 0 40px; align-items: start; }
+.pdp { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 64px; padding: 28px 0 40px; align-items: start; }
 .pdp__media { position: sticky; top: calc(var(--header-h) + 24px); }
 .pdp__stage { position: relative; background: var(--tile); border-radius: 20px; aspect-ratio: 1 / .98; overflow: hidden; }
 .pdp__zoom, .pdp__zoom picture, .pdp__zoom img { width: 100%; height: 100%; }
@@ -409,7 +409,7 @@ a.line__name:hover { text-decoration: underline; }
 .foot-actions { display: grid; gap: 10px; margin-top: 16px; }
 
 /* Panier et commande */
-.cols { display: grid; grid-template-columns: 1.5fr 1fr; gap: 48px; align-items: start; padding-bottom: 96px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 48px; align-items: start; padding-bottom: 96px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
 .panel--sticky { position: sticky; top: calc(var(--header-h) + 24px); }
 .panel h2 { font-size: 20px; margin-bottom: 16px; }
@@ -424,7 +424,8 @@ a.line__name:hover { text-decoration: underline; }
 .co-step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; }
 .co-step h2 { font-size: 19px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .co-step h2 i { font-style: normal; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; font-family: var(--font); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.form-grid > * { min-width: 0; }
 .form-grid .full { grid-column: 1 / -1; }
 .opts { display: grid; gap: 10px; }
 .opt { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; transition: border-color .2s, background .2s; }
@@ -498,7 +499,7 @@ a.line__name:hover { text-decoration: underline; }
   .nav { display: none; }
   .header__burger { display: inline-flex; }
   .header__in { grid-template-columns: auto 1fr auto; gap: 6px; }
-  .split, .newsletter, .pdp, .cols { grid-template-columns: 1fr; }
+  .split, .newsletter, .pdp, .cols { grid-template-columns: minmax(0, 1fr); }
   .pdp__media, .panel--sticky { position: static; }
   .section { padding: 64px 0; }
   .split__media { min-height: 0; aspect-ratio: 1 / .9; }
@@ -543,13 +544,18 @@ a.line__name:hover { text-decoration: underline; }
   .hero__count { font-size: 10px; }
   .hero__arrows { display: none; }
   .hero__bars { max-width: none; }
-  .assure { grid-template-columns: 1fr; }
-  .assure__item + .assure__item { border-left: 0; border-top: 1px solid var(--line); }
+  .assure { grid-template-columns: 1fr 1fr; }
+  .assure__item { flex-direction: column; gap: 10px; padding: 18px 16px; }
+  .assure__item strong { font-size: 14px; }
+  .assure__item span { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.4; }
+  /* Page produit : bouton plus compact, le prix est déjà affiché au-dessus */
+  .buy .btn { padding: 0 18px; gap: 8px; }
+  .buy__sum { display: none; }
   .section__head { flex-direction: column; align-items: flex-start; gap: 12px; }
   .toolbar__right { width: 100%; }
   .search { flex: 1; }
   .search input { width: 100%; }
-  .form-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
   .co-step, .panel { padding: 20px; }
   .cart-list { padding: 4px 16px; }
   .cart-list .line { grid-template-columns: 84px 1fr; gap: 14px; }
@@ -612,4 +618,26 @@ a.line__name:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
   .slide.is-active, .hero__text, .hero__text.is-on { transition: none !important; }
   .slide.is-active .slide__media picture img, .slide.is-prev .slide__media picture img { transition: none !important; }
+}
+
+/* Liste déroulante avec recherche (pays, départements) */
+.combo { position: relative; }
+.combo__field { position: relative; }
+.combo__input { padding-right: 44px; text-overflow: ellipsis; }
+.combo__toggle { position: absolute; top: 0; right: 0; width: 44px; height: 100%; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); }
+.combo__toggle svg { transition: transform .2s var(--ease); }
+.combo.is-open .combo__toggle svg { transform: rotate(180deg); }
+.combo__list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); max-height: 280px; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 6px; list-style: none; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm); box-shadow: 0 18px 40px -12px rgba(20, 20, 20, .22); }
+.combo__list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14.5px; cursor: pointer; }
+.combo__list li small { flex: none; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.combo__list li.is-active { background: #f3f1ec; }
+.combo__list li.is-on { font-weight: 600; }
+.combo__list li.is-on::after { content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.combo__list li.is-on small { margin-left: auto; }
+.combo__list .combo__empty { color: var(--ink-3); cursor: default; }
+.co-step:has(.combo.is-open) { position: relative; z-index: 5; }
+/* Très petits téléphones (320 px) : quantité et bouton plus serrés */
+@media (max-width: 380px) {
+  .buy .qty button { width: 36px; }
+  .buy .btn { padding: 0 14px; font-size: 14px; }
 }

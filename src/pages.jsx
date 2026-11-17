@@ -4,6 +4,7 @@ import { go, useCatalog, useStore } from './store.jsx';
 import { CartLine, EmptyCart, Icon, NewsForm, Photo, ProductCard, PromoBox, Reveal, ShipBar, Summary } from './ui.jsx';
 import GlassSurface from './GlassSurface.jsx';
 import SlideCommit from './SlideCommit.jsx';
+import Combobox from './Combobox.jsx';
 
 function useTitle(title) {
   useEffect(() => { document.title = title ? `${title} — NStore Football` : 'NStore Football — Maillots de football'; }, [title]);
@@ -148,8 +149,8 @@ function HeroSlider() {
 const ASSURE = [
   ['truck', 'Livraison offerte', 'Dès 100 € d\'achat'],
   ['refresh', 'Retours gratuits', 'Sous 30 jours'],
-  ['box', 'Expédition sous 48 h', 'Colis suivi jusqu\'à chez vous'],
-  ['lock', 'Paiement sécurisé', 'Carte, PayPal ou à la livraison']
+  ['box', 'Expédition sous 48 h', 'Colis suivi jusqu\'à chez vous'],
+  ['lock', 'Paiement sécurisé', 'Carte bancaire ou PayPal']
 ];
 const BEAMS = [
   ['4%', '-34deg', '9deg', '7s', '0s'], ['4%', '-18deg', '11deg', '8.5s', '-3s'],
@@ -394,7 +395,7 @@ export function Product({ id }) {
               <button onClick={() => setQty((v) => Math.min(10, v + 1))} aria-label="Augmenter la quantité"><Icon name="plus" size={18} /></button>
             </div>
             <button className="btn btn--primary" onClick={() => { const it = item(); if (it) { add(it); setLayer('cart'); } }}>
-              <Icon name="bag" size={18} />Ajouter au panier · {fmt(unit * qty)}
+              <Icon name="bag" size={18} />Ajouter au panier<span className="buy__sum"> · {fmt(unit * qty)}</span>
             </button>
             <button className="btn btn--ghost" onClick={() => { const it = item(); if (it) { add(it); go('#/commande'); } }}>Commander maintenant</button>
           </div>
@@ -474,12 +475,30 @@ function Field({ id, label, full, ...rest }) {
     </div>
   );
 }
-const PAYS = ['France', 'Belgique', 'Suisse', 'Luxembourg', 'Algérie', 'Maroc', 'Tunisie', 'Canada'];
 const PAY = {
   carte: ['card', 'Carte bancaire', 'Visa, Mastercard, CB'],
-  paypal: ['wallet', 'PayPal', 'Vous serez redirigé pour valider le paiement'],
-  livraison: ['box', 'Paiement à la livraison', 'En espèces ou par carte, à la remise du colis']
+  paypal: ['wallet', 'PayPal', 'Vous serez redirigé pour valider le paiement']
 };
+// Nom de la subdivision selon le pays (département en France, wilaya en Algérie…)
+const REGION_LABEL = {
+  FR: 'Département', DZ: 'Wilaya', MA: 'Province ou préfecture', TN: 'Gouvernorat', EG: 'Gouvernorat',
+  BE: 'Province', ES: 'Province', IT: 'Province', NL: 'Province', CA: 'Province', CH: 'Canton', DE: 'Land',
+  US: 'État', BR: 'État', MX: 'État', AU: 'État ou territoire', IN: 'État ou territoire', PT: 'District'
+};
+const SHOW_CODE = ['US', 'CA', 'AU', 'BR', 'MX', 'IT', 'CH']; // codes courts utiles à afficher (ex. CA, TX)
+const NUMERIC_CP = ['FR', 'BE', 'CH', 'LU', 'DE', 'ES', 'IT', 'DZ', 'MA', 'TN', 'US', 'MC'];
+const FALLBACK_COUNTRIES = [{ value: 'FR', label: 'France' }];
+
+// Liste des pays et des subdivisions, chargée seulement sur la page de commande
+function useGeo() {
+  const [geo, setGeo] = useState(null);
+  useEffect(() => {
+    let on = true;
+    import('./geo.json').then((m) => { if (on) setGeo(m.default); });
+    return () => { on = false; };
+  }, []);
+  return geo;
+}
 
 // Largeur réelle d'un bloc, pour que le bouton à glisser occupe toute la colonne
 function useWidth(ref, fallback = 320) {
@@ -502,6 +521,14 @@ export function Checkout() {
   const [card, setCard] = useState({ num: '', exp: '', cvc: '' });
   const [placed, setPlaced] = useState(false);          // commande enregistrée : on garde la page le temps de l'animation
   const [slideError, setSlideError] = useState('Vérifiez vos informations');
+  const [country, setCountry] = useState('FR');
+  const [region, setRegion] = useState('');
+  const geo = useGeo();
+  const countryOptions = useMemo(() => (geo ? geo.countries.map(([value, label]) => ({ value, label })) : FALLBACK_COUNTRIES), [geo]);
+  const regionOptions = useMemo(() => {
+    const list = geo?.regions[country] || [];
+    return list.map(([code, label]) => ({ value: code, label, hint: /^\d/.test(code) || SHOW_CODE.includes(country) ? code : undefined }));
+  }, [geo, country]);
   const formRef = useRef(null);
   const slotRef = useRef(null);
   const slotWidth = useWidth(slotRef);
@@ -513,7 +540,7 @@ export function Checkout() {
     const m = SHIPPING[ship];
     return {
       customer: { prenom: v('prenom'), nom: v('nom'), email: v('email'), tel: v('tel') },
-      address: { adresse: v('adresse'), complement: v('complement'), cp: v('cp'), ville: v('ville'), pays: v('pays') },
+      address: { adresse: v('adresse'), complement: v('complement'), cp: v('cp'), ville: v('ville'), region: v('region'), pays: v('pays') },
       shipping: { method: ship, label: m.label, delay: m.delay, price: totals.shipping },
       payment: pay,
       promo,
@@ -568,14 +595,20 @@ export function Checkout() {
             <div className="form-grid">
               <Field id="prenom" label="Prénom" required autoComplete="given-name" />
               <Field id="nom" label="Nom" required autoComplete="family-name" />
+              <div className={regionOptions.length ? '' : 'full'}>
+                <Combobox id="pays" name="pays" label="Pays" options={countryOptions} value={country} required
+                  placeholder="Rechercher un pays" onChange={(v) => { setCountry(v); setRegion(''); }} />
+              </div>
+              {regionOptions.length > 0 && (
+                <div>
+                  <Combobox id="region" name="region" label={REGION_LABEL[country] || 'Région'} options={regionOptions} value={region} required
+                    placeholder="Rechercher" onChange={setRegion} />
+                </div>
+              )}
               <Field id="adresse" label="Adresse" full required autoComplete="address-line1" placeholder="Numéro et nom de rue" />
               <Field id="complement" label="Complément (facultatif)" full autoComplete="address-line2" placeholder="Bâtiment, étage, interphone" />
-              <Field id="cp" label="Code postal" required autoComplete="postal-code" inputMode="numeric" />
+              <Field id="cp" label="Code postal" required autoComplete="postal-code" inputMode={NUMERIC_CP.includes(country) ? 'numeric' : 'text'} />
               <Field id="ville" label="Ville" required autoComplete="address-level2" />
-              <div className="full">
-                <label className="label" htmlFor="pays">Pays</label>
-                <select className="input" id="pays" name="pays" autoComplete="country-name">{PAYS.map((c) => <option key={c}>{c}</option>)}</select>
-              </div>
             </div>
           </Reveal>
           <Reveal as="section" className="co-step" delay={120}>
@@ -624,14 +657,14 @@ export function Checkout() {
           <div style={{ marginTop: 12 }}><Summary withShipping /></div>
           <div className="co-slide" ref={slotRef}>
             <SlideCommit
-              label={`${pay === 'livraison' ? 'Glisser pour commander' : 'Glisser pour payer'} · ${fmt(totals.total)}`}
+              label={`Glisser pour payer · ${fmt(totals.total)}`}
               doneLabel="Commande enregistrée"
               errorLabel={slideError}
               onConfirm={confirm}
               onDone={() => setTimeout(() => go('#/confirmation'), 900)}
               trackColor="#141414"
               handleColor="#f5f5f5"
-              successColor="#da0105"
+              successColor="#22c55e"
               dangerColor="#e5484d"
               width={slotWidth}
               height={56}
@@ -663,12 +696,12 @@ export function Confirmation() {
           <div className="sum-row"><span>Sous-total</span><b>{fmt(o.subtotal)}</b></div>
           {o.discount > 0 && <div className="sum-row"><span>Code {o.promo}</span><span className="green">- {fmt(o.discount)}</span></div>}
           <div className="sum-row"><span>{o.shipping.label}</span>{o.shipping.price ? <b>{fmt(o.shipping.price)}</b> : <span className="green">Offerte</span>}</div>
-          <div className="sum-row"><span>Paiement</span><b>{PAYMENTS[o.payment]}</b></div>
+          <div className="sum-row"><span>Paiement</span><b>{PAYMENTS[o.payment] || o.payment}</b></div>
           <div className="sum-row sum-row--total"><span>Total TTC</span><strong>{fmt(o.total)}</strong></div>
           <div className="sum-row" style={{ marginTop: 14, alignItems: 'flex-start' }}>
             <span style={{ display: 'inline-flex', gap: 8 }}><Icon name="pin" size={18} />Livraison</span>
             <span style={{ textAlign: 'right' }}>
-              {[`${o.customer.prenom} ${o.customer.nom}`, o.address.adresse, o.address.complement, `${o.address.cp} ${o.address.ville}`, o.address.pays]
+              {[`${o.customer.prenom} ${o.customer.nom}`, o.address.adresse, o.address.complement, `${o.address.cp} ${o.address.ville}`, o.address.region, o.address.pays]
                 .filter(Boolean).map((a) => <span key={a} style={{ display: 'block' }}>{a}</span>)}
               <span className="muted">{o.shipping.delay}</span>
             </span>

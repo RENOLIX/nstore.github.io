@@ -70,4 +70,4 @@ export const ORDER_STATUS = {
   livree: 'Livrée',
   annulee: 'Annulée'
 };
-export const PAYMENTS = { carte: 'Carte bancaire', paypal: 'PayPal', livraison: 'Paiement à la livraison' };
+export const PAYMENTS = { carte: 'Carte bancaire', paypal: 'PayPal' };

@@ -232,7 +232,7 @@ begin
      or coalesce(trim(a ->> 'ville'), '') = '' then
     raise exception 'Coordonnées incomplètes.';
   end if;
-  if v_payment not in ('carte', 'paypal', 'livraison') then
+  if v_payment is null or v_payment not in ('carte', 'paypal') then
     raise exception 'Mode de paiement inconnu.';
   end if;
 
@@ -276,7 +276,8 @@ begin
       'email', left(trim(c ->> 'email'), 160), 'tel', left(trim(coalesce(c ->> 'tel', '')), 40)),
     jsonb_build_object(
       'adresse', left(trim(a ->> 'adresse'), 200), 'complement', left(trim(coalesce(a ->> 'complement', '')), 200),
-      'cp', left(trim(a ->> 'cp'), 20), 'ville', left(trim(a ->> 'ville'), 100), 'pays', left(trim(coalesce(a ->> 'pays', 'France')), 60)),
+      'cp', left(trim(a ->> 'cp'), 20), 'ville', left(trim(a ->> 'ville'), 100),
+      'region', left(trim(coalesce(a ->> 'region', '')), 100), 'pays', left(trim(coalesce(a ->> 'pays', 'France')), 80)),
     jsonb_build_object('method', v_method, 'label', v_ship_label, 'delay', v_ship_delay, 'price', v_ship_price),
     v_payment, v_code, v_lines, v_sub, v_disc, v_after + v_ship_price
   )

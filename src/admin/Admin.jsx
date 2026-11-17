@@ -482,7 +482,7 @@ function Orders({ orders, setOrders, notify, catalog }) {
                   <td data-label="Commande"><strong>{o.num}</strong><span className="adm-muted">{dateFmt.format(new Date(o.createdAt))}</span></td>
                   <td data-label="Client">{o.customer.prenom} {o.customer.nom}<span className="adm-muted">{o.customer.email}</span></td>
                   <td data-label="Articles">{itemsOf(o)}</td>
-                  <td data-label="Paiement">{PAYMENTS[o.payment]}</td>
+                  <td data-label="Paiement">{PAYMENTS[o.payment] || o.payment}</td>
                   <td data-label="Total" className="r adm-num">{fmt(o.total)}</td>
                   <td data-label="Statut"><StatusPill status={o.status} /></td>
                 </tr>
@@ -510,9 +510,9 @@ function Orders({ orders, setOrders, notify, catalog }) {
               <div><div className="adm-label"><I n="user" s={15} />Client</div>
                 <p>{open.customer.prenom} {open.customer.nom}<br /><a href={`mailto:${open.customer.email}`}>{open.customer.email}</a><br />{open.customer.tel}</p></div>
               <div><div className="adm-label"><I n="pin" s={15} />Livraison</div>
-                <p>{open.address.adresse}{open.address.complement && <><br />{open.address.complement}</>}<br />{open.address.cp} {open.address.ville}<br />{open.address.pays}</p></div>
+                <p>{open.address.adresse}{open.address.complement && <><br />{open.address.complement}</>}<br />{open.address.cp} {open.address.ville}{open.address.region && <><br />{open.address.region}</>}<br />{open.address.pays}</p></div>
               <div><div className="adm-label"><I n="truck" s={15} />Mode</div><p>{open.shipping.label}<br /><span className="adm-muted">{open.shipping.delay}</span></p></div>
-              <div><div className="adm-label"><I n="card" s={15} />Paiement</div><p>{PAYMENTS[open.payment]}</p></div>
+              <div><div className="adm-label"><I n="card" s={15} />Paiement</div><p>{PAYMENTS[open.payment] || open.payment}</p></div>
             </div>
             <div>
               <div className="adm-label">Articles</div>
