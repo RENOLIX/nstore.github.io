@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BASE, CATS, discountPct, fmt, FREE_SHIP } from './data.js';
 import { lineKey, useCatalog, useStore } from './store.jsx';
+import GlassSurface from './GlassSurface.jsx';
 
 /* ---------- Icônes SVG ---------- */
 const ICONS = {
@@ -98,7 +99,11 @@ export function ProductCard({ p, index = 0 }) {
         <div className="card__media">
           {p.compareAt && <span className="card__badge card__badge--sale">-{discountPct(p)} %</span>}
           <Photo name={p.img} alt={`Maillot ${p.name}`} />
-          <span className="card__cta">Voir le maillot <Icon name="arrow" size={16} /></span>
+          <span className="card__cta" aria-hidden="true">
+            <GlassSurface width="100%" height="100%" borderRadius={22} distortionScale={-180} displace={0.5} backgroundOpacity={0.1}>
+              <span className="card__cta-label">Voir le maillot <Icon name="arrow" size={16} /></span>
+            </GlassSurface>
+          </span>
         </div>
         <div className="card__info">
           <div>

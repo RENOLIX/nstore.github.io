@@ -104,8 +104,12 @@ function HeroSlider() {
           </div>
           <span className="hero__count">0{i + 1} / 0{n}</span>
           <div className="hero__arrows">
-            <button onClick={prev} aria-label="Diapositive précédente"><Icon name="left" /></button>
-            <button onClick={next} aria-label="Diapositive suivante"><Icon name="chevron" /></button>
+            <button onClick={prev} aria-label="Diapositive précédente">
+              <GlassSurface width={46} height={46} borderRadius={23} distortionScale={-180} displace={0.5} backgroundOpacity={0.1}><Icon name="left" /></GlassSurface>
+            </button>
+            <button onClick={next} aria-label="Diapositive suivante">
+              <GlassSurface width={46} height={46} borderRadius={23} distortionScale={-180} displace={0.5} backgroundOpacity={0.1}><Icon name="chevron" /></GlassSurface>
+            </button>
           </div>
         </div>
       </div>
