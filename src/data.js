@@ -2,28 +2,28 @@
    Ces maillots remplissent la base au premier lancement ; ensuite on les gère depuis la page admin (#/admin). */
 
 export const SEED_PRODUCTS = [
-  { id: 'bayern-munich-domicile', img: 'p1', name: 'Bayern Munich Domicile', cat: 'clubs', league: 'Allemagne', type: 'Domicile',
+  { id: 'bayern-munich-domicile', img: 'p1', name: 'Bayern Munich Domicile', cat: 'homme', league: 'Allemagne', type: 'Domicile',
     price: 89.9, badge: 'Nouveau', isNew: true,
     desc: 'Rouge vif à fines rayures ton sur ton, col et bords de manches blancs soulignés d\'or.' },
-  { id: 'arsenal-exterieur', img: 'p2', name: 'Arsenal Extérieur', cat: 'clubs', league: 'Angleterre', type: 'Extérieur',
+  { id: 'arsenal-exterieur', img: 'p2', name: 'Arsenal Extérieur', cat: 'homme', league: 'Angleterre', type: 'Extérieur',
     price: 89.9,
     desc: 'Jaune pâle au motif graphique discret, col et poignets rayés bordeaux et marine.' },
-  { id: 'tottenham-third', img: 'p3', name: 'Tottenham Third', cat: 'clubs', league: 'Angleterre', type: 'Third',
+  { id: 'tottenham-third', img: 'p3', name: 'Tottenham Third', cat: 'homme', league: 'Angleterre', type: 'Third',
     price: 89.9, badge: 'Nouveau', isNew: true,
     desc: 'Bleu nuit traversé d\'éclats violets, roses et orangés en diagonale.' },
-  { id: 'arsenal-third', img: 'p4', name: 'Arsenal Third', cat: 'clubs', league: 'Angleterre', type: 'Third',
+  { id: 'arsenal-third', img: 'p4', name: 'Arsenal Third', cat: 'homme', league: 'Angleterre', type: 'Third',
     price: 84.9, compareAt: 104.9,
     desc: 'Bleu marine au motif géométrique ton sur ton, col en V rouge et jaune, marquages jaunes.' },
-  { id: 'barcelone-golf', img: 'p5', name: 'FC Barcelone Édition Golf', cat: 'clubs', league: 'Espagne', type: 'Édition spéciale',
+  { id: 'barcelone-golf', img: 'p5', name: 'FC Barcelone Édition Golf', cat: 'homme', league: 'Espagne', type: 'Édition spéciale',
     price: 94.9, badge: 'Édition spéciale',
     desc: 'Rayures blaugrana en dégradé et marquage jaune sur la poitrine.' },
-  { id: 'barcelone-crop-femme', img: 'p6', name: 'FC Barcelone Crop Top Femme', cat: 'clubs', league: 'Espagne', type: 'Coupe femme',
+  { id: 'barcelone-crop-femme', img: 'p6', name: 'FC Barcelone Crop Top Femme', cat: 'femme', league: 'Espagne', type: 'Coupe femme',
     price: 79.9, sizes: ['XS', 'S', 'M', 'L'],
     desc: 'Coupe courte pour femme, noir texturé qui fond vers le violet, marquages dorés.' },
-  { id: 'espagne-noir', img: 'p7', name: 'Espagne Édition Noire', cat: 'selections', league: 'Europe', type: 'Édition spéciale',
+  { id: 'espagne-noir', img: 'p7', name: 'Espagne Édition Noire', cat: 'homme', league: 'Europe', type: 'Édition spéciale',
     price: 94.9, badge: 'Édition spéciale',
     desc: 'Noir au motif arabesque ton sur ton, col en V et poignets bordeaux et jaune.' },
-  { id: 'espagne-bordeaux', img: 'p8', name: 'Espagne Édition Bordeaux', cat: 'selections', league: 'Europe', type: 'Édition spéciale',
+  { id: 'espagne-bordeaux', img: 'p8', name: 'Espagne Édition Bordeaux', cat: 'homme', league: 'Europe', type: 'Édition spéciale',
     price: 94.9, isNew: true, badge: 'Nouveau',
     desc: 'Bordeaux au motif arabesque ton sur ton, col en V et détails jaunes.' }
 ];
@@ -45,7 +45,7 @@ export const SLIDES = [
     text: 'Les rayures blaugrana revisitées, en série limitée.' }
 ];
 
-export const CATS = { clubs: 'Clubs', selections: 'Sélections', promos: 'Promotions' };
+export const CATS = { homme: 'Homme', femme: 'Femme' };
 export const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 export const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 export const FREE_SHIP = 100;
@@ -58,7 +58,7 @@ export const SHIPPING = {
 
 const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 export const fmt = (n) => eur.format(n);
-export const inCat = (p, cat) => cat === 'tous' || (cat === 'promos' ? !!p.compareAt : p.cat === cat);
+export const inCat = (p, cat) => cat === 'tous' || p.cat === cat;
 export const discountPct = (p) => Math.round((1 - p.price / p.compareAt) * 100);
 export const BASE = import.meta.env.BASE_URL;
 

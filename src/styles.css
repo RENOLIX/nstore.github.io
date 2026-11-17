@@ -179,8 +179,8 @@ main:focus { outline: none; }
 .assure__item strong { display: block; font-size: 15px; }
 .assure__item span { font-size: 13.5px; color: var(--ink-3); }
 
-.cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.cat { position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 18px; background: var(--tile); border-radius: 20px; aspect-ratio: 4 / 4.5; overflow: hidden; }
+.cats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.cat { position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 18px; background: var(--tile); border-radius: 20px; aspect-ratio: 1000 / 920; overflow: hidden; }
 .cat picture, .cat picture img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .cat picture img { object-fit: cover; object-position: center top; transition: transform 1s var(--ease); }
 .cat:hover picture img { transform: scale(1.05); }
@@ -502,7 +502,7 @@ a.line__name:hover { text-decoration: underline; }
   .split__text { padding: 44px 28px; }
   .newsletter { padding: 36px 28px; }
   .cats { grid-template-columns: 1fr; }
-  .cat { aspect-ratio: 1 / .92; }
+  .cat { aspect-ratio: 1000 / 920; }
   .cols { gap: 24px; }
 }
 @media (max-width: 640px) {

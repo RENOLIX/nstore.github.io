@@ -27,9 +27,8 @@ function Header({ route }) {
         <a href="#/" aria-label="NStore Football, accueil" className="header__logo"><Logo /></a>
         <nav className="nav" aria-label="Navigation principale">
           {link('tous', 'Boutique')}
-          {link('clubs', 'Clubs')}
-          {link('selections', 'Sélections')}
-          {link('promos', 'Promotions')}
+          {link('homme', 'Homme')}
+          {link('femme', 'Femme')}
           <button type="button" onClick={() => setLayer('sizes')}>Guide des tailles</button>
         </nav>
         <div className="header__actions">
@@ -62,9 +61,8 @@ function Footer() {
           <div className="footer__col">
             <h3>Boutique</h3>
             <a href="#/boutique">Tous les maillots</a>
-            <a href="#/boutique?cat=clubs">Clubs</a>
-            <a href="#/boutique?cat=selections">Sélections</a>
-            <a href="#/boutique?cat=promos">Promotions</a>
+            <a href="#/boutique?cat=homme">Homme</a>
+            <a href="#/boutique?cat=femme">Femme</a>
           </div>
           <div className="footer__col">
             <h3>Aide</h3>
@@ -135,9 +133,8 @@ function MenuDrawer() {
       <nav className="mnav">
         <a href="#/" onClick={close}>Accueil</a>
         <a href="#/boutique" onClick={close}>Tous les maillots</a>
-        <a href="#/boutique?cat=clubs" onClick={close}>Clubs</a>
-        <a href="#/boutique?cat=selections" onClick={close}>Sélections</a>
-        <a href="#/boutique?cat=promos" onClick={close}>Promotions</a>
+        <a href="#/boutique?cat=homme" onClick={close}>Homme</a>
+        <a href="#/boutique?cat=femme" onClick={close}>Femme</a>
         <button type="button" onClick={() => setLayer('sizes')}>Guide des tailles</button>
         <a href="#/panier" onClick={close}>Mon panier</a>
       </nav>

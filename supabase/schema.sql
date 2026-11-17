@@ -122,7 +122,7 @@ end $$;
 create table if not exists public.products (
   id text primary key,
   name text not null,
-  cat text not null check (cat in ('clubs', 'selections')),
+  cat text not null check (cat in ('homme', 'femme')),
   league text not null default '',
   type text not null default '',
   price numeric(10, 2) not null check (price > 0),

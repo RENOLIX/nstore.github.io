@@ -540,7 +540,7 @@ function Orders({ orders, setOrders, notify, catalog }) {
 }
 
 /* ================= Produits ================= */
-const EMPTY_PRODUCT = { name: '', cat: 'clubs', league: '', type: 'Domicile', price: '', compareAt: '', desc: '', sizes: DEFAULT_SIZES, isNew: false, active: true, img: '' };
+const EMPTY_PRODUCT = { name: '', cat: 'homme', league: '', type: 'Domicile', price: '', compareAt: '', desc: '', sizes: DEFAULT_SIZES, isNew: false, active: true, img: '' };
 
 // Réduit une photo envoyée depuis l'ordinateur (largeur 1000 px max, WebP) pour qu'elle reste légère.
 async function shrinkImage(file) {
@@ -620,8 +620,8 @@ function Products({ catalog, notify }) {
           <label><span className="sr-only">Catégorie</span>
             <select className="adm-input adm-select" value={cat} onChange={(e) => setCat(e.target.value)}>
               <option value="tous">Toutes les catégories</option>
-              <option value="clubs">Clubs</option>
-              <option value="selections">Sélections</option>
+              <option value="homme">Homme</option>
+              <option value="femme">Femme</option>
             </select>
           </label>
         </div>
@@ -693,7 +693,7 @@ function Products({ catalog, notify }) {
             </label>
             <label className="adm-field"><span>Catégorie</span>
               <select className="adm-input adm-select" value={edit.cat} onChange={(e) => set('cat', e.target.value)}>
-                <option value="clubs">Clubs</option><option value="selections">Sélections</option>
+                <option value="homme">Homme</option><option value="femme">Femme</option>
               </select>
             </label>
             <label className="adm-field"><span>Pays ou championnat</span>

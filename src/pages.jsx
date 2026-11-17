@@ -91,7 +91,7 @@ const BEAMS = [
   ['50%', '-6deg', '12deg', '9s', '-1.5s'], ['50%', '8deg', '12deg', '10s', '-5s'],
   ['96%', '20deg', '11deg', '8s', '-2s'], ['96%', '34deg', '9deg', '7.5s', '-4.5s']
 ];
-const TILES = [['clubs', 'cat-clubs'], ['selections', 'cat-selections'], ['promos', 'cat-promos']];
+const TILES = [['homme', 'cat-homme'], ['femme', 'cat-femme']];
 
 export function Home() {
   useTitle('');
@@ -124,7 +124,7 @@ export function Home() {
                 <a className="cat" href={`#/boutique?cat=${cat}`}>
                   <Photo name={img} alt="" />
                   <div className="cat__label">
-                    <div><strong>{CATS[cat]}</strong><span>{PRODUCTS.filter((p) => inCat(p, cat)).length} maillots</span></div>
+                    <div><strong>{CATS[cat]}</strong><span>{((n) => `${n} ${n > 1 ? 'maillots' : 'maillot'}`)(PRODUCTS.filter((p) => inCat(p, cat)).length)}</span></div>
                     <Icon name="arrow" />
                   </div>
                 </a>
@@ -216,7 +216,7 @@ export function Shop({ params }) {
     <div className="container">
       <Reveal className="page-head">
         <p className="eyebrow">Boutique</p>
-        <h1>{cat === 'tous' ? 'Tous les maillots' : cat === 'promos' ? 'Promotions' : `Maillots ${CATS[cat].toLowerCase()}`}</h1>
+        <h1>{cat === 'tous' ? 'Tous les maillots' : `Maillots ${CATS[cat].toLowerCase()}`}</h1>
         <p>Tissu respirant, finitions soignées, expédition sous 48 h.</p>
       </Reveal>
       <div className="toolbar">

@@ -143,7 +143,7 @@ export function StoreProvider({ children }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/* Routage par ancre : #/, #/boutique?cat=clubs, #/produit/<id>, #/panier, #/commande, #/confirmation, #/admin/<section> */
+/* Routage par ancre : #/, #/boutique?cat=homme, #/produit/<id>, #/panier, #/commande, #/confirmation, #/admin/<section> */
 function parse() {
   const [path, qs] = window.location.hash.replace(/^#\/?/, '').split('?');
   const seg = path.split('/').filter(Boolean);

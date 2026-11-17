@@ -1,22 +1,27 @@
-// Prépare les photos des tuiles de catégories : une version PC et une version téléphone.
-// Usage : node tools/make-tiles.mjs <clubs> <selections> <promos>   (chemins des trois photos)
+// Prépare les photos des deux tuiles de l'accueil (Homme, Femme), en version PC et téléphone.
+// Usage : node tools/make-tiles.mjs <photo homme> <photo femme> [centre horizontal femme en px]
+//   Homme : photo portrait, on garde le haut du corps.
+//   Femme : photo paysage, recadrée autour du maillot (centre par défaut : 1105 px).
 import sharp from 'sharp';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const out = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'img');
-const [clubs, selections, promos] = process.argv.slice(2);
-const jobs = { 'cat-clubs': clubs, 'cat-selections': selections, 'cat-promos': promos };
+const [hommeSrc, femmeSrc, cxArg] = process.argv.slice(2);
+const R = 1000 / 920; // format des tuiles
 
-for (const [name, src] of Object.entries(jobs)) {
-  const meta = await sharp(src).metadata();
-  const small = meta.width < 800; // petite photo : agrandie puis légèrement accentuée
-  const make = (w, h, file) => {
-    let img = sharp(src).resize({ width: w, height: h, fit: 'cover', position: 'top', kernel: 'lanczos3' });
-    if (small) img = img.sharpen({ sigma: 0.8 });
-    return img.modulate({ saturation: 1.04 }).jpeg({ quality: 86, mozjpeg: true }).toFile(path.join(out, file));
-  };
-  await make(900, 1010, `${name}-desktop.jpg`);  // tuile PC, format portrait
-  await make(800, 740, `${name}-mobile.jpg`);    // tuile téléphone, presque carrée
-  console.log(name, `${meta.width}x${meta.height}`, small ? '(agrandie)' : '');
+async function crop(src, centerX) {
+  const m = await sharp(src).metadata();
+  if (m.width / m.height < R) { // plus haute que la tuile : on garde le haut
+    return sharp(src).extract({ left: 0, top: 0, width: m.width, height: Math.round(m.width / R) }).toBuffer();
+  }
+  const w = Math.round(m.height * R); // plus large : on centre sur centerX
+  const left = Math.max(0, Math.min(m.width - w, Math.round((centerX ?? m.width / 2) - w / 2)));
+  return sharp(src).extract({ left, top: 0, width: w, height: m.height }).toBuffer();
+}
+
+for (const [name, buf] of [['homme', await crop(hommeSrc)], ['femme', await crop(femmeSrc, Number(cxArg) || 1105)]]) {
+  await sharp(buf).resize(1000, 920).jpeg({ quality: 84, mozjpeg: true }).toFile(path.join(out, `cat-${name}-desktop.jpg`));
+  await sharp(buf).resize(700, 644).jpeg({ quality: 82, mozjpeg: true }).toFile(path.join(out, `cat-${name}-mobile.jpg`));
+  console.log(name, 'ok');
 }
