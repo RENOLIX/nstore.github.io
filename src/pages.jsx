@@ -9,12 +9,31 @@ function useTitle(title) {
 }
 
 /* ================= Accueil ================= */
-// Bouton en verre du carrousel : la photo derrière se voit à travers, déformée sur les bords.
-function GlassButton({ href, tabIndex, strong = false, className = '', children }) {
+// Bouton en verre du carrousel : réglages de l'exemple GlassSurface (320 × 76, arrondi 38, distorsion -180,
+// displace 0.5, voile 0.1). Sur téléphone, même verre en plus petit pour tenir dans le carrousel.
+function useIsPhone() {
+  const query = '(max-width: 640px)';
+  const [phone, setPhone] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setPhone(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return phone;
+}
+function GlassButton({ href, tabIndex, width = 320, className = '', children }) {
+  const phone = useIsPhone();
   return (
-    <a className={'glass-btn' + (strong ? ' glass-btn--strong' : '') + (className ? ' ' + className : '')} href={href} tabIndex={tabIndex}>
-      <GlassSurface width="100%" height="100%" borderRadius={999} borderWidth={0.07} brightness={50} opacity={0.93}
-        blur={11} displace={0.5} distortionScale={-150} saturation={1.4} backgroundOpacity={strong ? 0.14 : 0.02}>
+    <a className={'glass-btn' + (className ? ' ' + className : '')} href={href} tabIndex={tabIndex}>
+      <GlassSurface
+        width={phone ? 'auto' : width}
+        height={phone ? 44 : 76}
+        borderRadius={phone ? 22 : 38}
+        distortionScale={-180}
+        displace={0.5}
+        backgroundOpacity={0.1}
+      >
         <span className="glass-btn__label">{children}</span>
       </GlassSurface>
     </a>
@@ -64,8 +83,8 @@ function HeroSlider() {
                 <p>{s.text}</p>
                 {live && <div className="slide__price">{fmt(p.price)}{p.compareAt && <s>{fmt(p.compareAt)}</s>}</div>}
                 <div className="slide__cta">
-                  <GlassButton strong href={live ? `#/produit/${p.id}` : '#/boutique'} tabIndex={on ? 0 : -1}>Découvrir le maillot <Icon name="arrow" size={18} /></GlassButton>
-                  <GlassButton className="glass-btn--more" href="#/boutique" tabIndex={on ? 0 : -1}>Toute la collection</GlassButton>
+                  <GlassButton href={live ? `#/produit/${p.id}` : '#/boutique'} tabIndex={on ? 0 : -1}>Découvrir le maillot <Icon name="arrow" size={18} /></GlassButton>
+                  <GlassButton width={280} className="glass-btn--more" href="#/boutique" tabIndex={on ? 0 : -1}>Toute la collection</GlassButton>
                 </div>
               </div>
             </div>
