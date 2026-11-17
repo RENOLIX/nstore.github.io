@@ -31,23 +31,34 @@ const P = {
   pin: '<path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   truck: '<path d="M3 6h11v10H3zM14 9h4l3 3.5V16h-7z"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/>',
-  card: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18"/>'
+  card: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14 9l2 2"/>'
 };
 function I({ n, s = 18 }) {
   return <svg className="adm-ico" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: P[n] }} />;
 }
 
+// [clé, titre, icône, rôles autorisés]
 const SECTIONS = [
-  ['tableau', 'Tableau de bord', 'grid'],
-  ['commandes', 'Commandes', 'orders'],
-  ['produits', 'Produits', 'shirt'],
-  ['codes', 'Codes promo', 'percent']
+  ['tableau', 'Tableau de bord', 'grid', ['admin', 'employe']],
+  ['commandes', 'Commandes', 'orders', ['admin', 'employe']],
+  ['produits', 'Produits', 'shirt', ['admin', 'employe']],
+  ['codes', 'Codes promo', 'percent', ['admin']],
+  ['utilisateurs', 'Utilisateurs', 'users', ['admin']]
 ];
+const ROLES = { admin: 'Administrateur', employe: 'Employé' };
+const ROLE_HELP = {
+  admin: 'Accès complet : commandes, produits, codes promo et utilisateurs.',
+  employe: 'Commandes et produits. Pas de codes promo ni d\'utilisateurs.'
+};
 const dateFmt = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const dateOnly = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 const dayFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 const numFmt = new Intl.NumberFormat('fr-FR');
 const counted = (o) => o.status !== 'annulee';
 const itemsOf = (o) => o.lines.reduce((n, l) => n + l.qty, 0);
+const initials = (u) => (u.name || u.email || '?').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join('');
 
 /* ================= Racine ================= */
 export default function Admin({ section }) {
@@ -59,28 +70,35 @@ export default function Admin({ section }) {
 
   const notify = useCallback((msg) => {
     setToast(msg); clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(''), 2600);
+    timer.current = setTimeout(() => setToast(''), 2800);
   }, []);
   const loadOrders = useCallback(async () => {
     try { setOrders(await backend.listOrders()); } catch (e) { notify(e.message); setOrders([]); }
   }, [notify]);
+  const logout = useCallback(async () => { await backend.signOut(); setSession(null); setOrders(null); }, []);
 
-  useEffect(() => { document.title = 'Admin — NStore Football'; backend.getSession().then(setSession); }, []);
-  useEffect(() => { if (session) loadOrders(); }, [session, loadOrders]);
+  useEffect(() => {
+    document.title = 'Admin — NStore Football';
+    backend.getSession().then(setSession).catch(() => setSession(null));
+  }, []);
+  // Une fois connecté, on recharge le catalogue : un membre de l'équipe voit aussi les maillots masqués et les codes promo.
+  useEffect(() => { if (session?.role) { loadOrders(); catalog.reload(); } }, [session, loadOrders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (session === undefined) return <div className="adm-boot" />;
   if (!session) return <Login onDone={setSession} />;
+  if (!session.role) return <NoAccess session={session} onLogout={logout} />;
 
-  const current = SECTIONS.find(([k]) => k === section) || SECTIONS[0];
+  const allowed = SECTIONS.filter(([, , , roles]) => roles.includes(session.role));
+  const current = allowed.find(([k]) => k === section) || allowed[0];
   const todo = (orders || []).filter((o) => o.status === 'nouvelle').length;
-  const ctx = { orders, loadOrders, setOrders, notify, catalog };
+  const ctx = { orders, loadOrders, setOrders, notify, catalog, session };
 
   return (
     <div className="adm">
       <aside className="adm-side">
         <a className="adm-brand" href="#/admin"><Logo light /><span>Admin</span></a>
         <nav className="adm-nav" aria-label="Sections de l'admin">
-          {SECTIONS.map(([k, label, ic]) => (
+          {allowed.map(([k, label, ic]) => (
             <a key={k} href={k === 'tableau' ? '#/admin' : `#/admin/${k}`} className={current[0] === k ? 'is-on' : ''} aria-current={current[0] === k ? 'page' : undefined}>
               <I n={ic} /><span>{label}</span>
               {k === 'commandes' && todo > 0 && <b className="adm-count">{todo}</b>}
@@ -88,8 +106,12 @@ export default function Admin({ section }) {
           ))}
         </nav>
         <div className="adm-side__foot">
+          <div className="adm-me" title={session.user.email}>
+            <span className="adm-avatar">{initials({ name: session.name, email: session.user.email })}</span>
+            <span className="adm-me__txt"><strong>{session.name || session.user.email}</strong><small>{ROLES[session.role]}</small></span>
+          </div>
           <a href="#/"><I n="store" /><span>Voir la boutique</span></a>
-          <button type="button" onClick={async () => { await backend.signOut(); setSession(null); }}><I n="logout" /><span>Se déconnecter</span></button>
+          <button type="button" onClick={logout}><I n="logout" /><span>Se déconnecter</span></button>
         </div>
       </aside>
 
@@ -110,6 +132,7 @@ export default function Admin({ section }) {
           {current[0] === 'commandes' && <Orders {...ctx} />}
           {current[0] === 'produits' && <Products {...ctx} />}
           {current[0] === 'codes' && <Promos {...ctx} />}
+          {current[0] === 'utilisateurs' && <Users {...ctx} />}
         </main>
       </div>
       <div className={'adm-toast' + (toast ? ' is-on' : '')} role="status" aria-live="polite">{toast}</div>
@@ -121,37 +144,74 @@ export default function Admin({ section }) {
 function Login({ onDone }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [setup, setSetup] = useState(null); // true : aucun administrateur, on propose de créer le premier compte
+  const real = backend.authMode === 'password';
+  useEffect(() => { if (real) backend.adminExists().then((x) => setSetup(!x)).catch(() => setSetup(false)); }, [real]);
+
   const submit = async (e) => {
     e.preventDefault();
-    setBusy(true); setErr('');
+    const f = new FormData(e.currentTarget);
+    const v = (k) => String(f.get(k) || '');
+    setErr('');
+    if (setup) {
+      if (v('password').length < 8) return setErr('Choisissez un mot de passe d\'au moins 8 caractères.');
+      if (v('password') !== v('confirm')) return setErr('Les deux mots de passe ne sont pas identiques.');
+    }
+    setBusy(true);
     try {
-      const f = new FormData(e.currentTarget);
-      onDone(await backend.signIn(String(f.get('email') || ''), String(f.get('password') || '')));
+      onDone(setup
+        ? await backend.createFirstAdmin({ email: v('email'), password: v('password'), fullName: v('name').trim() })
+        : await backend.signIn(v('email'), v('password')));
     } catch (ex) { setErr(ex.message || 'Connexion impossible.'); setBusy(false); }
   };
+
+  if (real && setup === null) return <div className="adm-boot" />;
   return (
     <div className="adm-login">
       <form className="adm-login__card" onSubmit={submit}>
         <Logo />
-        <h1>Espace administrateur</h1>
-        {backend.authMode === 'password' ? (
+        <h1>{setup ? 'Créer le compte administrateur' : 'Espace administrateur'}</h1>
+        {!real ? (
+          <div className="adm-note">
+            <I n="info" />
+            <p><strong>Mode démo local.</strong> Il n'y a pas encore de vrais comptes : les produits et les commandes restent dans ce navigateur et chaque visiteur a sa propre copie.</p>
+          </div>
+        ) : setup ? (
           <>
-            <p className="adm-muted">Connectez-vous avec votre compte administrateur.</p>
+            <p className="adm-muted">Aucun administrateur n'existe encore. Ce premier compte aura tous les droits ; les suivants se créent ensuite depuis la page Utilisateurs.</p>
+            <label className="adm-field"><span>Votre nom</span><input className="adm-input" name="name" autoComplete="name" required /></label>
+            <label className="adm-field"><span>Adresse e-mail</span><input className="adm-input" name="email" type="email" required autoComplete="username" /></label>
+            <label className="adm-field"><span>Mot de passe <small>8 caractères minimum</small></span><input className="adm-input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+            <label className="adm-field"><span>Confirmer le mot de passe</span><input className="adm-input" name="confirm" type="password" required autoComplete="new-password" /></label>
+          </>
+        ) : (
+          <>
+            <p className="adm-muted">Connectez-vous avec votre compte.</p>
             <label className="adm-field"><span>Adresse e-mail</span><input className="adm-input" name="email" type="email" required autoComplete="username" /></label>
             <label className="adm-field"><span>Mot de passe</span><input className="adm-input" name="password" type="password" required autoComplete="current-password" /></label>
           </>
-        ) : (
-          <div className="adm-note">
-            <I n="info" />
-            <p><strong>Mode démo local.</strong> Il n'y a pas encore de vrais comptes : les produits et les commandes restent dans ce navigateur et chaque visiteur a sa propre copie. La connexion par e-mail et mot de passe arrive avec Supabase.</p>
-          </div>
         )}
         {err && <p className="adm-error" role="alert">{err}</p>}
         <button className="adm-btn adm-btn--primary adm-btn--block" disabled={busy}>
-          <I n="lock" />{busy ? 'Connexion…' : backend.authMode === 'password' ? 'Se connecter' : "Entrer dans l'admin"}
+          <I n="lock" />{busy ? 'Un instant…' : !real ? "Entrer dans l'admin" : setup ? 'Créer mon compte' : 'Se connecter'}
         </button>
         <a className="adm-login__back" href="#/">Retour à la boutique</a>
       </form>
+    </div>
+  );
+}
+
+/* Compte connecté mais sans rôle : un administrateur doit lui en donner un */
+function NoAccess({ session, onLogout }) {
+  return (
+    <div className="adm-login">
+      <div className="adm-login__card">
+        <Logo />
+        <h1>Accès en attente</h1>
+        <p className="adm-muted">Le compte {session.user.email} n'a pas encore de rôle. Demandez à un administrateur de vous en attribuer un depuis la page Utilisateurs.</p>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--block" onClick={onLogout}><I n="logout" />Se déconnecter</button>
+        <a className="adm-login__back" href="#/">Retour à la boutique</a>
+      </div>
     </div>
   );
 }
@@ -740,6 +800,151 @@ function Promos({ catalog, notify }) {
         )}
       </section>
       {toDelete && <Confirm text={`Supprimer le code ${toDelete.code} ? Les clients ne pourront plus l'utiliser.`} onYes={remove} onNo={() => setToDelete(null)} />}
+    </div>
+  );
+}
+
+/* ================= Utilisateurs ================= */
+const EMPTY_USER = { name: '', email: '', password: '', role: 'employe' };
+
+function Users({ session, notify }) {
+  const [users, setUsers] = useState(null);
+  const [q, setQ] = useState('');
+  const [form, setForm] = useState(null);        // { mode: 'new' | 'edit', ...champs }
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+
+  const load = useCallback(async () => {
+    try { setUsers(await backend.listUsers()); } catch (e) { notify(e.message); setUsers([]); }
+  }, [notify]);
+  useEffect(() => { load(); }, [load]);
+  if (!users) return <div className="adm-skel" />;
+
+  const counts = { admin: users.filter((u) => u.role === 'admin').length, employe: users.filter((u) => u.role === 'employe').length, aucun: users.filter((u) => !u.role).length };
+  const list = users.filter((u) => !q || norm(`${u.name} ${u.email}`).includes(norm(q)));
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (form.mode === 'new') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = 'Adresse e-mail invalide.';
+      if (form.password.length < 8) errs.password = '8 caractères minimum.';
+    }
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    setBusy(true);
+    try {
+      if (form.mode === 'new') {
+        await backend.createUser({ email: form.email, password: form.password, name: form.name.trim(), role: form.role });
+        notify(`Compte créé pour ${form.email.trim()}.`);
+      } else {
+        await backend.updateUser(form.id, { role: form.role || null, name: form.name.trim() });
+        notify('Compte mis à jour.');
+      }
+      setForm(null);
+      await load();
+    } catch (ex) { notify(ex.message); }
+    setBusy(false);
+  };
+  const remove = async () => {
+    setBusy(true);
+    try { await backend.deleteUser(toDelete.id); notify(`Compte ${toDelete.email} supprimé.`); setToDelete(null); setForm(null); await load(); }
+    catch (ex) { notify(ex.message); }
+    setBusy(false);
+  };
+
+  return (
+    <div className="adm-stack">
+      <section className="adm-tiles adm-tiles--3">
+        <div className="adm-tile"><div className="adm-tile__label"><I n="key" s={16} />Administrateurs</div><div className="adm-tile__value">{counts.admin}</div><div className="adm-tile__sub">{ROLE_HELP.admin}</div></div>
+        <div className="adm-tile"><div className="adm-tile__label"><I n="users" s={16} />Employés</div><div className="adm-tile__value">{counts.employe}</div><div className="adm-tile__sub">{ROLE_HELP.employe}</div></div>
+        <div className="adm-tile"><div className="adm-tile__label"><I n="lock" s={16} />Sans accès</div><div className="adm-tile__value">{counts.aucun}</div><div className="adm-tile__sub">Comptes qui ne peuvent pas ouvrir l'admin.</div></div>
+      </section>
+
+      <div className="adm-toolbar">
+        <label className="adm-search"><I n="search" s={17} /><span className="sr-only">Rechercher</span>
+          <input type="search" placeholder="Nom ou e-mail" value={q} onChange={(e) => setQ(e.target.value)} />
+        </label>
+        <button type="button" className="adm-btn adm-btn--primary" onClick={() => { setErrors({}); setForm({ mode: 'new', ...EMPTY_USER }); }}><I n="plus" />Ajouter un utilisateur</button>
+      </div>
+
+      <section className="adm-card adm-card--flush">
+        {list.length === 0 ? <Empty icon="users" title="Aucun utilisateur ne correspond" /> : (
+          <table className="adm-table">
+            <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Créé le</th><th>Dernière connexion</th><th className="r"><span className="sr-only">Actions</span></th></tr></thead>
+            <tbody>
+              {list.map((u) => {
+                const me = u.id === session.user.id;
+                return (
+                  <tr key={u.id}>
+                    <td data-label="Utilisateur">
+                      <div className="adm-prod">
+                        <span className="adm-avatar adm-avatar--light">{initials(u)}</span>
+                        <div><strong>{u.name || u.email}{me && <span className="adm-you">vous</span>}</strong><span className="adm-muted">{u.email}</span></div>
+                      </div>
+                    </td>
+                    <td data-label="Rôle">{u.role ? <span className={`adm-role adm-role--${u.role}`}>{ROLES[u.role]}</span> : <span className="adm-role adm-role--none">Sans accès</span>}</td>
+                    <td data-label="Créé le">{dateOnly.format(new Date(u.createdAt))}</td>
+                    <td data-label="Dernière connexion" className="adm-muted">{u.lastSignInAt ? dateFmt.format(new Date(u.lastSignInAt)) : 'Jamais'}</td>
+                    <td className="r adm-actions">
+                      <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => { setErrors({}); setForm({ mode: 'edit', id: u.id, email: u.email, name: u.name, role: u.role || '', me }); }}><I n="edit" s={16} />Modifier</button>
+                      {!me && <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" onClick={() => setToDelete(u)} aria-label={`Supprimer ${u.email}`}><I n="trash" s={16} /></button>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <Drawer open={!!form} onClose={() => setForm(null)}
+        title={form?.mode === 'new' ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur'}
+        sub={form?.mode === 'new' ? 'Il pourra se connecter tout de suite, sans confirmation par e-mail.' : form?.email}
+        foot={form && (
+          <>
+            {form.mode === 'edit' && !form.me && <button type="button" className="adm-btn adm-btn--ghost adm-btn--danger-text" onClick={() => setToDelete(form)}><I n="trash" s={16} />Supprimer</button>}
+            <span className="adm-grow" />
+            <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setForm(null)}>Annuler</button>
+            <button type="submit" form="adm-user" className="adm-btn adm-btn--primary" disabled={busy}>{busy ? 'Enregistrement…' : form.mode === 'new' ? 'Créer le compte' : 'Enregistrer'}</button>
+          </>
+        )}>
+        {form && (
+          <form id="adm-user" className="adm-form" onSubmit={save} noValidate>
+            <label className="adm-field adm-field--full"><span>Nom</span>
+              <input className="adm-input" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Prénom Nom" autoComplete="off" />
+            </label>
+            {form.mode === 'new' && (
+              <>
+                <label className="adm-field adm-field--full"><span>Adresse e-mail</span>
+                  <input className="adm-input" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} autoComplete="off" aria-invalid={!!errors.email} />
+                  {errors.email && <em className="adm-error">{errors.email}</em>}
+                </label>
+                <label className="adm-field adm-field--full"><span>Mot de passe <small>à transmettre à la personne, 8 caractères minimum</small></span>
+                  <input className="adm-input" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} autoComplete="new-password" aria-invalid={!!errors.password} />
+                  {errors.password && <em className="adm-error">{errors.password}</em>}
+                </label>
+              </>
+            )}
+            <fieldset className="adm-field adm-field--full">
+              <legend>Rôle</legend>
+              <div className="adm-roles">
+                {[['admin', ROLES.admin, ROLE_HELP.admin], ['employe', ROLES.employe, ROLE_HELP.employe], ...(form.mode === 'edit' ? [['', 'Sans accès', 'Le compte existe mais ne peut plus ouvrir l\'admin.']] : [])].map(([v, label, help]) => (
+                  <label key={v || 'none'} className={'adm-roleopt' + (form.role === v ? ' is-on' : '')}>
+                    <input type="radio" name="role" value={v} checked={form.role === v} onChange={() => set('role', v)} disabled={form.me && v !== 'admin'} />
+                    <span><strong>{label}</strong><small>{help}</small></span>
+                  </label>
+                ))}
+              </div>
+              {form.me && <p className="adm-hint">Vous ne pouvez pas retirer votre propre rôle d'administrateur.</p>}
+            </fieldset>
+          </form>
+        )}
+      </Drawer>
+
+      {toDelete && <Confirm text={`Supprimer le compte ${toDelete.email} ? La personne ne pourra plus se connecter. Cette action est définitive.`} onYes={remove} onNo={() => setToDelete(null)} busy={busy} />}
     </div>
   );
 }

@@ -31,7 +31,6 @@ export function CatalogProvider({ children }) {
   const value = useMemo(() => {
     const all = products || [];
     const map = new Map(all.map((p) => [p.id, p]));
-    const rates = Object.fromEntries(promos.filter((p) => p.active).map((p) => [p.code, p.percent / 100]));
     return {
       ready: products !== null,
       error,
@@ -39,7 +38,6 @@ export function CatalogProvider({ children }) {
       products: all.filter((p) => p.active !== false), // produits visibles en boutique
       promos,
       byId: (id) => map.get(id),
-      promoRate: (code) => rates[code],
       reload
     };
   }, [products, promos, error, reload]);
@@ -52,9 +50,9 @@ export const lineKey = (l) => [l.id, l.size].join('|');
 
 const cents = (n) => Math.round(n * 100) / 100; // évite les 89,80000000000001 €
 
-export function computeTotals(cart, promo, ship, byId, promoRate) {
+export function computeTotals(cart, percent, ship, byId) {
   const sub = cents(cart.reduce((n, l) => n + (byId(l.id)?.price || 0) * l.qty, 0));
-  const rate = promo ? promoRate(promo) || 0 : 0;
+  const rate = (percent || 0) / 100;
   const discount = cents(sub * rate);
   const after = cents(sub - discount);
   const priceOf = (k) => (SHIPPING[k].freeOver && after >= FREE_SHIP ? 0 : SHIPPING[k].price);
@@ -66,9 +64,10 @@ const Ctx = createContext(null);
 export const useStore = () => useContext(Ctx);
 
 export function StoreProvider({ children }) {
-  const { ready, byId, promoRate } = useCatalog();
+  const { ready, byId } = useCatalog();
   const [cart, setCart] = useState(() => load('nstore_cart', []).map(({ id, size, qty }) => ({ id, size, qty })));
-  const [promo, setPromo] = useState(() => load('nstore_promo', null));
+  // Code promo appliqué : { code, percent }, vérifié auprès du backend
+  const [promo, setPromo] = useState(() => { const p = load('nstore_promo', null); return p && typeof p === 'object' && p.code ? p : null; });
   const [ship, setShip] = useState('standard');
   const [layer, setLayer] = useState(null); // 'cart' | 'menu' | 'sizes'
   const [toast, setToast] = useState('');
@@ -76,15 +75,23 @@ export function StoreProvider({ children }) {
   const [bump, setBump] = useState(0);
   const timer = useRef();
 
-  // Une fois le catalogue chargé : on retire du panier les maillots supprimés ou masqués, et les codes désactivés.
+  // Une fois le catalogue chargé : on retire du panier les maillots supprimés ou masqués.
   useEffect(() => {
     if (!ready) return;
     setCart((c) => {
       const kept = c.filter((l) => byId(l.id) && byId(l.id).active !== false);
       return kept.length === c.length ? c : kept;
     });
-    setPromo((p) => (p && promoRate(p) ? p : null));
-  }, [ready, byId, promoRate]);
+  }, [ready, byId]);
+
+  // Au chargement, on revérifie le code gardé en mémoire : il a pu être désactivé depuis.
+  useEffect(() => {
+    const code = load('nstore_promo', null)?.code;
+    if (!code) return;
+    backend.checkPromo(code)
+      .then((percent) => setPromo((p) => (p?.code === code ? (percent ? { code, percent } : null) : p)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => save('nstore_cart', cart), [cart]);
   useEffect(() => save('nstore_promo', promo), [promo]);
@@ -108,12 +115,15 @@ export function StoreProvider({ children }) {
     setCart((c) => (qty < 1 ? c.filter((l) => lineKey(l) !== key) : c.map((l) => (lineKey(l) === key ? { ...l, qty: Math.min(10, qty) } : l))));
   }, []);
   const remove = useCallback((key) => setCart((c) => c.filter((l) => lineKey(l) !== key)), []);
-  const applyPromo = useCallback((raw) => {
+  const applyPromo = useCallback(async (raw) => {
     const code = (raw || '').trim().toUpperCase();
-    if (promoRate(code)) { setPromo(code); notify('Code ' + code + ' appliqué.'); return true; }
-    notify(code ? 'Ce code n\'est pas valide.' : 'Saisissez un code promo.');
+    if (!code) { notify('Saisissez un code promo.'); return false; }
+    let percent = null;
+    try { percent = await backend.checkPromo(code); } catch { notify('Vérification du code impossible, réessayez.'); return false; }
+    if (percent) { setPromo({ code, percent }); notify('Code ' + code + ' appliqué.'); return true; }
+    notify('Ce code n\'est pas valide.');
     return false;
-  }, [notify, promoRate]);
+  }, [notify]);
 
   // Enregistre la commande dans le backend ; la confirmation affiche la version enregistrée.
   const placeOrder = useCallback(async (o) => {
@@ -123,12 +133,12 @@ export function StoreProvider({ children }) {
   }, []);
 
   const value = useMemo(() => ({
-    cart, promo, ship, layer, toast, order, bump,
+    cart, promo: promo?.code || null, ship, layer, toast, order, bump,
     count: cart.reduce((n, l) => n + l.qty, 0),
-    totals: computeTotals(cart, promo, ship, byId, promoRate),
+    totals: computeTotals(cart, promo?.percent, ship, byId),
     add, setQty, remove, applyPromo, removePromo: () => setPromo(null),
     setShip, setLayer, notify, placeOrder
-  }), [cart, promo, ship, layer, toast, order, bump, byId, promoRate, add, setQty, remove, applyPromo, notify, placeOrder]);
+  }), [cart, promo, ship, layer, toast, order, bump, byId, add, setQty, remove, applyPromo, notify, placeOrder]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

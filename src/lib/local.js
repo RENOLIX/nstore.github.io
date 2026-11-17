@@ -66,6 +66,11 @@ export async function deletePromo(code) {
   await wait();
   write(KEYS.promos, read(KEYS.promos, SEED_PROMOS).filter((p) => p.code !== code));
 }
+export async function checkPromo(code) {
+  await wait();
+  const p = read(KEYS.promos, SEED_PROMOS).find((x) => x.code === String(code).toUpperCase() && x.active);
+  return p ? p.percent : null;
+}
 
 /* ---------- Commandes ---------- */
 export async function listOrders() {
@@ -103,10 +108,23 @@ export async function getSession() {
 }
 export async function signIn() {
   await wait();
-  const session = { user: { email: 'demo@local' }, demo: true };
+  const session = { user: { id: 'demo', email: 'demo@local' }, role: 'admin', name: 'Démo', demo: true };
   try { sessionStorage.setItem(KEYS.session, JSON.stringify(session)); } catch { /* ignore */ }
   return session;
 }
 export async function signOut() {
   try { sessionStorage.removeItem(KEYS.session); } catch { /* ignore */ }
 }
+
+export async function adminExists() { return true; }
+export async function createFirstAdmin() { throw new Error('Disponible avec Supabase.'); }
+
+/* ---------- Utilisateurs : il n'y a qu'un compte démo en local ---------- */
+export async function listUsers() {
+  await wait();
+  return [{ id: 'demo', email: 'demo@local', name: 'Démo', role: 'admin', createdAt: new Date().toISOString(), lastSignInAt: null }];
+}
+const onlyWithSupabase = async () => { throw new Error('La gestion des utilisateurs fonctionne avec Supabase.'); };
+export const createUser = onlyWithSupabase;
+export const updateUser = onlyWithSupabase;
+export const deleteUser = onlyWithSupabase;

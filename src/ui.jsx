@@ -187,7 +187,7 @@ export function PromoBox() {
   if (promo) {
     return <div className="promo-on"><span>Code {promo} appliqué</span><button type="button" onClick={removePromo}>Retirer</button></div>;
   }
-  const submit = () => { if (applyPromo(code)) setCode(''); };
+  const submit = async () => { if (await applyPromo(code)) setCode(''); };
   return (
     <>
       <div className="promo">
