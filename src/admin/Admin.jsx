@@ -512,7 +512,7 @@ function Orders({ orders, setOrders, notify, catalog }) {
               <div><div className="adm-label"><I n="pin" s={15} />Livraison</div>
                 <p>{open.address.adresse}{open.address.complement && <><br />{open.address.complement}</>}<br />{open.address.cp} {open.address.ville}{open.address.region && <><br />{open.address.region}</>}<br />{open.address.pays}</p></div>
               <div><div className="adm-label"><I n="truck" s={15} />Mode</div><p>{open.shipping.label}<br /><span className="adm-muted">{open.shipping.delay}</span></p></div>
-              <div><div className="adm-label"><I n="card" s={15} />Paiement</div><p>{PAYMENTS[open.payment] || open.payment}</p></div>
+              <div><div className="adm-label"><I n="card" s={15} />Paiement</div><p>{PAYMENTS[open.payment] || open.payment}{open.payment === 'paypal' && <><br /><span className="adm-muted">À vérifier dans PayPal : référence {open.num}, montant {fmt(open.total)}</span></>}</p></div>
             </div>
             <div>
               <div className="adm-label">Articles</div>

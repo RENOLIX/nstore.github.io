@@ -71,7 +71,8 @@ export function StoreProvider({ children }) {
   const [ship, setShip] = useState('standard');
   const [layer, setLayer] = useState(null); // 'cart' | 'menu' | 'sizes'
   const [toast, setToast] = useState('');
-  const [order, setOrder] = useState(null);
+  // Dernière commande, gardée pour l'onglet en cours : on la retrouve au retour de PayPal
+  const [order, setOrder] = useState(() => { try { return JSON.parse(sessionStorage.getItem('nstore_order')) || null; } catch { return null; } });
   const [bump, setBump] = useState(0);
   const timer = useRef();
 
@@ -129,6 +130,7 @@ export function StoreProvider({ children }) {
   const placeOrder = useCallback(async (o) => {
     const saved = await backend.createOrder(o);
     setOrder(saved); setCart([]); setPromo(null);
+    try { sessionStorage.setItem('nstore_order', JSON.stringify(saved)); } catch { /* stockage indisponible */ }
     return saved;
   }, []);
 

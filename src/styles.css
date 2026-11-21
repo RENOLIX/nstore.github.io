@@ -641,3 +641,9 @@ a.line__name:hover { text-decoration: underline; }
   .buy .qty button { width: 36px; }
   .buy .btn { padding: 0 14px; font-size: 14px; }
 }
+
+/* Paiement : PayPal seul, présenté comme une option déjà choisie */
+.opt.is-only { cursor: default; border-color: var(--ink); background: var(--surface); }
+.opt__dot { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 5px solid var(--ink); background: #fff; }
+.confirm__icon.is-wait { background: #f1efe9; color: var(--ink); }
+.confirm__pay { margin-top: 26px; }

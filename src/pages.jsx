@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CATS, DEFAULT_SIZES, discountPct, fmt, FREE_SHIP, inCat, PAYMENTS, SHIPPING, SLIDES } from './data.js';
-import { go, useCatalog, useStore } from './store.jsx';
+import { CATS, DEFAULT_SIZES, discountPct, fmt, FREE_SHIP, inCat, PAYMENTS, paypalLink, SHIPPING, SLIDES } from './data.js';
+import { go, useCatalog, useRoute, useStore } from './store.jsx';
 import { CartLine, EmptyCart, Icon, NewsForm, Photo, ProductCard, PromoBox, Reveal, ShipBar, Summary } from './ui.jsx';
 import GlassSurface from './GlassSurface.jsx';
 import SlideCommit from './SlideCommit.jsx';
@@ -150,7 +150,7 @@ const ASSURE = [
   ['truck', 'Livraison offerte', 'Dès 100 € d\'achat'],
   ['refresh', 'Retours gratuits', 'Sous 30 jours'],
   ['box', 'Expédition sous 48 h', 'Colis suivi jusqu\'à chez vous'],
-  ['lock', 'Paiement sécurisé', 'Carte bancaire ou PayPal']
+  ['lock', 'Paiement sécurisé', 'Réglé en toute sécurité par PayPal']
 ];
 const BEAMS = [
   ['4%', '-34deg', '9deg', '7s', '0s'], ['4%', '-18deg', '11deg', '8.5s', '-3s'],
@@ -475,10 +475,6 @@ function Field({ id, label, full, ...rest }) {
     </div>
   );
 }
-const PAY = {
-  carte: ['card', 'Carte bancaire', 'Visa, Mastercard, CB'],
-  paypal: ['wallet', 'PayPal', 'Vous serez redirigé pour valider le paiement']
-};
 // Nom de la subdivision selon le pays (département en France, wilaya en Algérie…)
 const REGION_LABEL = {
   FR: 'Département', DZ: 'Wilaya', MA: 'Province ou préfecture', TN: 'Gouvernorat', EG: 'Gouvernorat',
@@ -517,8 +513,8 @@ export function Checkout() {
   useTitle('Commande');
   const { cart, totals, promo, ship, setShip, placeOrder, notify } = useStore();
   const { byId } = useCatalog();
-  const [pay, setPay] = useState('carte');
-  const [card, setCard] = useState({ num: '', exp: '', cvc: '' });
+  const pay = 'paypal'; // seul moyen de paiement pour l'instant
+  const savedRef = useRef(null); // commande enregistrée, pour créer le lien PayPal
   const [placed, setPlaced] = useState(false);          // commande enregistrée : on garde la page le temps de l'animation
   const [slideError, setSlideError] = useState('Vérifiez vos informations');
   const [country, setCountry] = useState('FR');
@@ -550,7 +546,7 @@ export function Checkout() {
   };
 
   // Appelé quand le bouton arrive au bout. Une promesse rejetée fait revenir le bouton avec le message d'erreur.
-  // (Plus tard, le paiement Stripe se fera ici, avant d'enregistrer la commande.)
+  // La commande est enregistrée, puis le client part payer sur PayPal (voir onDone).
   const confirm = () => {
     const form = formRef.current;
     if (!form.checkValidity()) {
@@ -560,7 +556,7 @@ export function Checkout() {
     }
     const order = buildOrder(form);
     setPlaced(true);
-    return placeOrder(order).catch((err) => {
+    return placeOrder(order).then((saved) => { savedRef.current = saved; }, (err) => {
       setPlaced(false);
       setSlideError('Commande refusée');
       notify(err.message || 'La commande n\'a pas pu être enregistrée.');
@@ -626,27 +622,12 @@ export function Checkout() {
           <Reveal as="section" className="co-step" delay={180}>
             <h2><i>4</i>Paiement</h2>
             <div className="opts">
-              {Object.entries(PAY).map(([k, [ic, title, sub]]) => (
-                <label className="opt" key={k}>
-                  <input type="radio" name="pay" value={k} checked={pay === k} onChange={() => setPay(k)} />
-                  <span className="opt__txt"><strong>{title}</strong><span>{sub}</span></span>
-                  <Icon name={ic} size={22} />
-                </label>
-              ))}
-            </div>
-            {pay === 'carte' && (
-              <div className="card-fields">
-                <div className="form-grid">
-                  <Field id="cardnum" label="Numéro de carte" full required inputMode="numeric" autoComplete="cc-number" placeholder="1234 5678 9012 3456" maxLength={19}
-                    value={card.num} onChange={(e) => setCard({ ...card, num: e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})(?=.)/g, '$1 ') })} />
-                  <Field id="cardexp" label="Expiration" required inputMode="numeric" autoComplete="cc-exp" placeholder="MM/AA" maxLength={5}
-                    value={card.exp} onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setCard({ ...card, exp: d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d }); }} />
-                  <Field id="cardcvc" label="Cryptogramme" required inputMode="numeric" autoComplete="cc-csc" placeholder="123" maxLength={4}
-                    value={card.cvc} onChange={(e) => setCard({ ...card, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
-                  <Field id="cardname" label="Titulaire de la carte" full required autoComplete="cc-name" />
-                </div>
+              <div className="opt is-only">
+                <span className="opt__dot" aria-hidden="true" />
+                <span className="opt__txt"><strong>PayPal</strong><span>Après validation, vous êtes redirigé vers PayPal pour régler votre commande.</span></span>
+                <Icon name="wallet" size={22} />
               </div>
-            )}
+            </div>
           </Reveal>
         </div>
 
@@ -657,11 +638,11 @@ export function Checkout() {
           <div style={{ marginTop: 12 }}><Summary withShipping /></div>
           <div className="co-slide" ref={slotRef}>
             <SlideCommit
-              label={`Glisser pour payer · ${fmt(totals.total)}`}
-              doneLabel="Commande enregistrée"
+              label={`Payer avec PayPal · ${fmt(totals.total)}`}
+              doneLabel="Redirection vers PayPal"
               errorLabel={slideError}
               onConfirm={confirm}
-              onDone={() => setTimeout(() => go('#/confirmation'), 900)}
+              onDone={() => setTimeout(() => { if (savedRef.current) window.location.href = paypalLink(savedRef.current); else go('#/confirmation'); }, 700)}
               trackColor="#141414"
               handleColor="#f5f5f5"
               successColor="#22c55e"
@@ -673,7 +654,7 @@ export function Checkout() {
             />
           </div>
           <p className="legal">En validant, vous acceptez nos conditions générales de vente.</p>
-          <p className="sum-note"><Icon name="lock" size={14} />Paiement chiffré et sécurisé</p>
+          <p className="sum-note"><Icon name="lock" size={14} />Paiement sécurisé par PayPal</p>
         </Reveal>
       </form>
     </div>
@@ -681,16 +662,29 @@ export function Checkout() {
 }
 
 export function Confirmation() {
-  useTitle('Commande confirmée');
   const { order: o } = useStore();
+  const { params } = useRoute();
+  const paid = params.paypal === 'ok';
+  const unpaid = o && o.payment === 'paypal' && !paid;
+  useTitle(unpaid ? 'Paiement à finaliser' : 'Commande confirmée');
   useEffect(() => { if (!o) go('#/'); }, [o]);
   if (!o) return null;
   return (
     <div className="container">
       <Reveal className="confirm">
-        <div className="confirm__icon"><Icon name="check" size={30} /></div>
-        <h1>Merci {o.customer.prenom}, c'est commandé.</h1>
-        <p>Commande <strong>{o.num}</strong>. Un récapitulatif est envoyé à {o.customer.email}.</p>
+        <div className={'confirm__icon' + (unpaid ? ' is-wait' : '')}><Icon name={unpaid ? 'wallet' : 'check'} size={30} /></div>
+        {unpaid ? (
+          <>
+            <h1>Paiement à finaliser</h1>
+            <p>Votre commande <strong>{o.num}</strong> est enregistrée, mais le paiement PayPal n'a pas été effectué.</p>
+            <a className="btn btn--primary confirm__pay" href={paypalLink(o)}><Icon name="wallet" size={18} />Payer avec PayPal · {fmt(o.total)}</a>
+          </>
+        ) : (
+          <>
+            <h1>Merci {o.customer.prenom}, c'est commandé.</h1>
+            <p>Commande <strong>{o.num}</strong>. Votre paiement PayPal a été transmis : nous vérifions sa réception, puis nous préparons votre colis.</p>
+          </>
+        )}
         <div className="panel">
           <div className="co-mini">{o.lines.map((l) => <CartLine key={l.id + l.size} l={l} mini />)}</div>
           <div className="sum-row"><span>Sous-total</span><b>{fmt(o.subtotal)}</b></div>
@@ -707,7 +701,7 @@ export function Confirmation() {
             </span>
           </div>
         </div>
-        <a className="btn btn--primary" href="#/boutique">Retour à la boutique</a>
+        <a className={'btn ' + (unpaid ? 'btn--ghost' : 'btn--primary')} href="#/boutique">Retour à la boutique</a>
       </Reveal>
     </div>
   );

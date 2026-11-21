@@ -85,7 +85,7 @@ function Footer() {
             <a href="#/">Confidentialité</a>
           </div>
           <div className="footer__pay" aria-label="Moyens de paiement acceptés">
-            <span>Carte bancaire</span><span>PayPal</span>
+            <span>PayPal</span>
           </div>
         </div>
       </div>

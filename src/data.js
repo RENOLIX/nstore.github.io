@@ -71,3 +71,28 @@ export const ORDER_STATUS = {
   annulee: 'Annulée'
 };
 export const PAYMENTS = { carte: 'Carte bancaire', paypal: 'PayPal' };
+
+// Paiement : PayPal uniquement pour l'instant (la carte bancaire reviendra avec Stripe).
+// Les paiements arrivent sur ce compte PayPal.
+export const PAYPAL_EMAIL = 'ounishany@yahoo.fr';
+
+// Lien de paiement PayPal d'une commande : montant et numéro repris de la commande enregistrée.
+// Au retour, PayPal renvoie sur la page de confirmation (payé ou annulé).
+export function paypalLink(order) {
+  const site = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({
+    cmd: '_xclick',
+    business: PAYPAL_EMAIL,
+    item_name: `Commande ${order.num} - NStore Football`,
+    invoice: order.num,
+    amount: Number(order.total).toFixed(2),
+    currency_code: 'EUR',
+    no_shipping: '1',
+    no_note: '1',
+    lc: 'FR',
+    charset: 'utf-8',
+    return: `${site}#/confirmation?paypal=ok`,
+    cancel_return: `${site}#/confirmation?paypal=annule`
+  });
+  return 'https://www.paypal.com/cgi-bin/webscr?' + params.toString();
+}
