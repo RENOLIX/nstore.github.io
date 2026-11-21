@@ -130,6 +130,7 @@ create table if not exists public.products (
   description text not null default '',
   sizes text[] not null default '{S,M,L,XL,XXL}',
   img text not null,
+  img_back text, -- photo de dos (facultative)
   is_new boolean not null default false,
   active boolean not null default true,
   position int not null default 0,
@@ -137,6 +138,7 @@ create table if not exists public.products (
   updated_at timestamptz not null default now()
 );
 alter table public.products enable row level security;
+alter table public.products add column if not exists img_back text;
 
 drop policy if exists "produits : lecture" on public.products;
 create policy "produits : lecture" on public.products

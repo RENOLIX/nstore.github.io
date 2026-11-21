@@ -603,11 +603,12 @@ function Products({ catalog, notify }) {
     catch (ex) { notify(ex.message); }
     setBusy(false);
   };
-  const onFile = async (file) => {
+  // key : 'img' (photo de face) ou 'imgBack' (photo de dos)
+  const onFile = async (file, key = 'img') => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setErrors((x) => ({ ...x, img: 'Choisissez un fichier image.' })); return; }
-    try { set('img', await shrinkImage(file)); setErrors((x) => ({ ...x, img: undefined })); }
-    catch { setErrors((x) => ({ ...x, img: "Cette image n'a pas pu être lue." })); }
+    if (!file.type.startsWith('image/')) { setErrors((x) => ({ ...x, [key]: 'Choisissez un fichier image.' })); return; }
+    try { set(key, await shrinkImage(file)); setErrors((x) => ({ ...x, [key]: undefined })); }
+    catch { setErrors((x) => ({ ...x, [key]: "Cette image n'a pas pu être lue." })); }
   };
 
   return (
@@ -677,13 +678,28 @@ function Products({ catalog, notify }) {
             <div className="adm-photo">
               <div className="adm-photo__preview">{edit.img ? <Photo name={edit.img} alt="Aperçu" /> : <I n="shirt" s={34} />}</div>
               <div>
-                <div className="adm-label">Photo</div>
+                <div className="adm-label">Photo de face</div>
                 <label className="adm-btn adm-btn--ghost adm-btn--sm adm-file">
                   <I n="upload" s={16} />{edit.img ? 'Changer la photo' : 'Choisir une photo'}
                   <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files[0])} />
                 </label>
                 <p className="adm-hint">{isUrl(edit.img) || !edit.img ? 'Format carré ou portrait conseillé. Réduite automatiquement à 1000 px.' : 'Photo fournie avec le site.'}</p>
                 {errors.img && <p className="adm-error">{errors.img}</p>}
+              </div>
+            </div>
+            <div className="adm-photo">
+              <div className="adm-photo__preview">{edit.imgBack ? <Photo name={edit.imgBack} alt="Aperçu du dos" /> : <I n="shirt" s={34} />}</div>
+              <div>
+                <div className="adm-label">Photo de dos <span className="adm-muted">(facultative)</span></div>
+                <div className="adm-photo__actions">
+                  <label className="adm-btn adm-btn--ghost adm-btn--sm adm-file">
+                    <I n="upload" s={16} />{edit.imgBack ? 'Changer la photo' : 'Choisir une photo'}
+                    <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files[0], 'imgBack')} />
+                  </label>
+                  {edit.imgBack && <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => set('imgBack', '')}>Retirer</button>}
+                </div>
+                <p className="adm-hint">Affichée au survol des cartes et sur la page du maillot.</p>
+                {errors.imgBack && <p className="adm-error">{errors.imgBack}</p>}
               </div>
             </div>
 

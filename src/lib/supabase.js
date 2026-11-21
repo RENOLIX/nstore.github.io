@@ -39,12 +39,13 @@ const run = async (promise) => {
 const fromProduct = (r) => ({
   id: r.id, name: r.name, cat: r.cat, league: r.league, type: r.type,
   price: Number(r.price), ...(r.compare_at != null ? { compareAt: Number(r.compare_at) } : {}),
-  desc: r.description, sizes: r.sizes, img: r.img, isNew: r.is_new, active: r.active
+  desc: r.description, sizes: r.sizes, img: r.img, ...(r.img_back ? { imgBack: r.img_back } : {}), isNew: r.is_new, active: r.active
 });
 const toProduct = (p) => ({
   id: p.id, name: p.name, cat: p.cat, league: p.league || '', type: p.type || '',
   price: p.price, compare_at: p.compareAt ?? null, description: p.desc || '',
-  sizes: p.sizes, img: p.img, is_new: !!p.isNew, active: p.active !== false, updated_at: new Date().toISOString()
+  sizes: p.sizes, img: p.img, ...(p.imgBack !== undefined ? { img_back: p.imgBack || null } : {}),
+  is_new: !!p.isNew, active: p.active !== false, updated_at: new Date().toISOString()
 });
 const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -64,7 +65,7 @@ async function uploadIfNeeded(img) {
 }
 
 export async function saveProduct(input) {
-  const p = { ...input, img: await uploadIfNeeded(input.img) };
+  const p = { ...input, img: await uploadIfNeeded(input.img), imgBack: await uploadIfNeeded(input.imgBack) };
   if (!p.id) {
     const base = slug(p.name) || 'maillot';
     const taken = new Set((await run(db.from('products').select('id').like('id', `${base}%`))).map((r) => r.id));

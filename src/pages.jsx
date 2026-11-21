@@ -327,7 +327,10 @@ export function Product({ id }) {
   const [qty, setQty] = useState(1);
   const [error, setError] = useState('');
   const [zoom, setZoom] = useState(null);
+  const [side, setSide] = useState('face'); // vue affichée : face ou dos
+  const swipeX = useRef(null);
   const sizesRef = useRef(null);
+  useEffect(() => { setSide('face'); }, [id]);
   useTitle(p ? p.name : ready ? 'Page introuvable' : '');
   if (!ready) return <div className="container" style={{ minHeight: '60vh' }} />;
   if (!p) return <NotFound />;
@@ -344,6 +347,8 @@ export function Product({ id }) {
     }
     return { id: p.id, size, qty };
   };
+  const views = p.imgBack ? [['face', p.img, 'Face'], ['dos', p.imgBack, 'Dos']] : [['face', p.img, 'Face']];
+  const shown = side === 'dos' && p.imgBack ? p.imgBack : p.img;
   const onMove = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
@@ -358,13 +363,31 @@ export function Product({ id }) {
       </nav>
       <div className="pdp">
         <Reveal className="pdp__media">
-          <div className={'pdp__stage' + (zoom ? ' is-zoom' : '')} onMouseMove={onMove} onMouseLeave={() => setZoom(null)}>
+          <div className={'pdp__stage' + (zoom ? ' is-zoom' : '')} onMouseMove={onMove} onMouseLeave={() => setZoom(null)}
+            onTouchStart={(e) => { swipeX.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => {
+              if (swipeX.current == null || views.length < 2) return;
+              const dx = e.changedTouches[0].clientX - swipeX.current;
+              if (Math.abs(dx) > 40) setSide(dx < 0 ? 'dos' : 'face');
+              swipeX.current = null;
+            }}>
             {p.compareAt && <span className="card__badge card__badge--sale">-{discountPct(p)} %</span>}
             <div className="pdp__zoom" style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined}>
-              <Photo name={p.img} alt={`Maillot ${p.name}`} eager />
+              <Photo key={shown} name={shown} alt={`Maillot ${p.name}${shown === p.imgBack ? ', vu de dos' : ''}`} eager />
             </div>
             <span className="pdp__hint"><Icon name="zoom" size={16} />Survolez pour zoomer</span>
           </div>
+          {views.length > 1 && (
+            <div className="pdp__views" role="group" aria-label="Vues du maillot">
+              {views.map(([k, img, label]) => (
+                <button key={k} type="button" className={'pdp__view' + (side === k ? ' is-on' : '')} aria-pressed={side === k}
+                  aria-label={`Voir le maillot de ${label.toLowerCase()}`} onClick={() => setSide(k)}>
+                  <Photo name={img} alt="" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </Reveal>
 
         <Reveal className="pdp__info" delay={120}>
