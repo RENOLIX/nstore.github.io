@@ -115,8 +115,8 @@ function HeroSlider() {
             })}
           </div>
           <div className="slide__cta">
-            <GlassButton href={active ? `#/produit/${active.id}` : '#/boutique'}>Découvrir le maillot <Icon name="arrow" size={18} /></GlassButton>
-            <GlassButton width={280} className="glass-btn--more" href="#/boutique">Toute la collection</GlassButton>
+            <GlassButton href={active ? `/produit/${active.id}` : '/boutique'}>Découvrir le maillot <Icon name="arrow" size={18} /></GlassButton>
+            <GlassButton width={280} className="glass-btn--more" href="/boutique">Toute la collection</GlassButton>
           </div>
         </div>
       </div>
@@ -182,12 +182,12 @@ export function Home() {
         <div className="container">
           <Reveal className="section__head">
             <div><p className="eyebrow">Parcourir</p><h2>Choisissez votre vestiaire</h2></div>
-            <a className="link" href="#/boutique">Tout voir <Icon name="arrow" size={16} /></a>
+            <a className="link" href="/boutique">Tout voir <Icon name="arrow" size={16} /></a>
           </Reveal>
           <div className="cats">
             {TILES.map(([cat, img], k) => (
               <Reveal key={cat} delay={k * 90}>
-                <a className="cat" href={`#/boutique?cat=${cat}`}>
+                <a className="cat" href={`/boutique?cat=${cat}`}>
                   <Photo name={img} alt="" />
                   <div className="cat__label">
                     <div><strong>{CATS[cat]}</strong><span>{((n) => `${n} ${n > 1 ? 'maillots' : 'maillot'}`)(PRODUCTS.filter((p) => inCat(p, cat)).length)}</span></div>
@@ -204,7 +204,7 @@ export function Home() {
         <div className="container">
           <Reveal className="section__head">
             <div><p className="eyebrow">La collection</p><h2>Tous nos maillots</h2></div>
-            <a className="link" href="#/boutique">Ouvrir la boutique <Icon name="arrow" size={16} /></a>
+            <a className="link" href="/boutique">Ouvrir la boutique <Icon name="arrow" size={16} /></a>
           </Reveal>
           <div className="grid">{PRODUCTS.map((p, k) => <ProductCard key={p.id} p={p} index={k} />)}</div>
         </div>
@@ -229,7 +229,7 @@ export function Home() {
               <h2>Barça, côté <em>nuit</em>.</h2>
               <p>Le crop top noir qui fond vers le violet, marquages dorés.</p>
               {barca && <div className="feature__price">{fmt(barca.price)}</div>}
-              <a className="btn btn--violet" href="#/produit/barcelone-crop-femme">
+              <a className="btn btn--violet" href="/produit/barcelone-crop-femme">
                 <span className="lbl-long">Découvrir le maillot</span><span className="lbl-short">Découvrir</span>
                 <Icon name="arrow" size={18} />
               </a>
@@ -288,7 +288,7 @@ export function Shop({ params }) {
       <div className="toolbar">
         <div className="chips">
           {chips.map(([c, label]) => (
-            <a key={c} className={'chip' + (c === cat ? ' is-on' : '')} href={c === 'tous' ? '#/boutique' : `#/boutique?cat=${c}`}>{label}</a>
+            <a key={c} className={'chip' + (c === cat ? ' is-on' : '')} href={c === 'tous' ? '/boutique' : `/boutique?cat=${c}`}>{label}</a>
           ))}
         </div>
         <div className="toolbar__right">
@@ -357,8 +357,8 @@ export function Product({ id }) {
   return (
     <div className="container">
       <nav className="crumbs" aria-label="Fil d'Ariane">
-        <a href="#/">Accueil</a><Icon name="chevron" size={14} />
-        <a href={`#/boutique?cat=${p.cat}`}>{CATS[p.cat]}</a><Icon name="chevron" size={14} />
+        <a href="/">Accueil</a><Icon name="chevron" size={14} />
+        <a href={`/boutique?cat=${p.cat}`}>{CATS[p.cat]}</a><Icon name="chevron" size={14} />
         <span>{p.name}</span>
       </nav>
       <div className="pdp">
@@ -420,7 +420,7 @@ export function Product({ id }) {
             <button className="btn btn--primary" onClick={() => { const it = item(); if (it) { add(it); setLayer('cart'); } }}>
               <Icon name="bag" size={18} />Ajouter au panier<span className="buy__sum"> · {fmt(unit * qty)}</span>
             </button>
-            <button className="btn btn--ghost" onClick={() => { const it = item(); if (it) { add(it); go('#/commande'); } }}>Commander maintenant</button>
+            <button className="btn btn--ghost" onClick={() => { const it = item(); if (it) { add(it); go('/commande'); } }}>Commander maintenant</button>
           </div>
 
           <ul className="perks">
@@ -474,14 +474,14 @@ export function Cart() {
       <div className="cols">
         <Reveal>
           <div className="cart-list">{cart.map((l) => <CartLine key={[l.id, l.size, l.name, l.number].join('|')} l={l} />)}</div>
-          <p style={{ marginTop: 20 }}><a className="link" href="#/boutique">Continuer mes achats</a></p>
+          <p style={{ marginTop: 20 }}><a className="link" href="/boutique">Continuer mes achats</a></p>
         </Reveal>
         <Reveal as="aside" className="panel panel--sticky" delay={120}>
           <h2>Récapitulatif</h2>
           <ShipBar />
           <PromoBox />
           <div style={{ marginTop: 14 }}><Summary /></div>
-          <div className="foot-actions"><a className="btn btn--primary btn--block" href="#/commande">Passer la commande <Icon name="arrow" size={18} /></a></div>
+          <div className="foot-actions"><a className="btn btn--primary btn--block" href="/commande">Passer la commande <Icon name="arrow" size={18} /></a></div>
           <p className="sum-note"><Icon name="lock" size={14} />Paiement sécurisé</p>
         </Reveal>
       </div>
@@ -596,7 +596,7 @@ export function Checkout() {
   return (
     <div className="container">
       <nav className="crumbs" aria-label="Étapes">
-        <a href="#/panier">Panier</a><Icon name="chevron" size={14} />
+        <a href="/panier">Panier</a><Icon name="chevron" size={14} />
         <span className="crumbs__on">Commande</span><Icon name="chevron" size={14} /><span>Confirmation</span>
       </nav>
       <div className="page-head" style={{ paddingTop: 20 }}><h1>Finaliser la commande</h1></div>
@@ -665,7 +665,7 @@ export function Checkout() {
               doneLabel="Redirection vers PayPal"
               errorLabel={slideError}
               onConfirm={confirm}
-              onDone={() => setTimeout(() => { if (savedRef.current) window.location.href = paypalLink(savedRef.current); else go('#/confirmation'); }, 700)}
+              onDone={() => setTimeout(() => { if (savedRef.current) window.location.href = paypalLink(savedRef.current); else go('/confirmation'); }, 700)}
               trackColor="#141414"
               handleColor="#f5f5f5"
               successColor="#22c55e"
@@ -690,7 +690,7 @@ export function Confirmation() {
   const paid = params.paypal === 'ok';
   const unpaid = o && o.payment === 'paypal' && !paid;
   useTitle(unpaid ? 'Paiement à finaliser' : 'Commande confirmée');
-  useEffect(() => { if (!o) go('#/'); }, [o]);
+  useEffect(() => { if (!o) go('/'); }, [o]);
   if (!o) return null;
   return (
     <div className="container">
@@ -724,7 +724,7 @@ export function Confirmation() {
             </span>
           </div>
         </div>
-        <a className={'btn ' + (unpaid ? 'btn--ghost' : 'btn--primary')} href="#/boutique">Retour à la boutique</a>
+        <a className={'btn ' + (unpaid ? 'btn--ghost' : 'btn--primary')} href="/boutique">Retour à la boutique</a>
       </Reveal>
     </div>
   );
@@ -737,7 +737,7 @@ export function NotFound() {
       <div className="empty">
         <Icon name="search" size={40} /><h2>Page introuvable</h2>
         <p>Ce maillot n'existe pas ou n'est plus disponible.</p>
-        <a className="btn btn--primary" href="#/boutique">Voir la boutique</a>
+        <a className="btn btn--primary" href="/boutique">Voir la boutique</a>
       </div>
     </div>
   );

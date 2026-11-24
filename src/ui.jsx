@@ -95,7 +95,7 @@ export function Price({ p }) {
 export function ProductCard({ p, index = 0 }) {
   return (
     <Reveal delay={(index % 4) * 70}>
-      <a className="card" href={`#/produit/${p.id}`}>
+      <a className="card" href={`/produit/${p.id}`}>
         <div className="card__media">
           {p.compareAt && <span className="card__badge card__badge--sale">-{discountPct(p)} %</span>}
           <Photo name={p.img} alt={`Maillot ${p.name}`} />
@@ -143,11 +143,11 @@ export function CartLine({ l, mini = false }) {
   }
   return (
     <div className="line">
-      <a className="line__img" href={`#/produit/${p.id}`} aria-label={p.name}><Photo name={p.img} alt="" /></a>
+      <a className="line__img" href={`/produit/${p.id}`} aria-label={p.name}><Photo name={p.img} alt="" /></a>
       <div>
         <div className="line__top">
           <div>
-            <a className="line__name" href={`#/produit/${p.id}`}>{p.name}</a>
+            <a className="line__name" href={`/produit/${p.id}`}>{p.name}</a>
             <div className="line__meta">{lineMeta(l)}</div>
           </div>
           <span className="line__price">{fmt(unit * l.qty)}</span>
@@ -183,7 +183,7 @@ export function EmptyCart() {
       <Icon name="bag" size={40} />
       <h2>Votre panier est vide</h2>
       <p>Parcourez la collection et trouvez vos couleurs.</p>
-      <a className="btn btn--primary" href="#/boutique">Voir la boutique</a>
+      <a className="btn btn--primary" href="/boutique">Voir la boutique</a>
     </div>
   );
 }

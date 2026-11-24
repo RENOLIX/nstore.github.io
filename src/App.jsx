@@ -18,13 +18,13 @@ function Header({ route }) {
   }, []);
   const active = route.name === 'boutique' ? route.params.cat || 'tous' : null;
   const link = (cat, label) => (
-    <a href={cat === 'tous' ? '#/boutique' : `#/boutique?cat=${cat}`} className={active === cat ? 'is-active' : ''}>{label}</a>
+    <a href={cat === 'tous' ? '/boutique' : `/boutique?cat=${cat}`} className={active === cat ? 'is-active' : ''}>{label}</a>
   );
   return (
     <header className={'header' + (scrolled ? ' is-scrolled' : '')}>
       <div className="container header__in">
         <button className="icon-btn header__burger" onClick={() => setLayer('menu')} aria-label="Ouvrir le menu"><Icon name="menu" /></button>
-        <a href="#/" aria-label="NStore Football, accueil" className="header__logo"><Logo /></a>
+        <a href="/" aria-label="NStore Football, accueil" className="header__logo"><Logo /></a>
         <nav className="nav" aria-label="Navigation principale">
           {link('tous', 'Boutique')}
           {link('homme', 'Homme')}
@@ -32,7 +32,7 @@ function Header({ route }) {
           <button type="button" onClick={() => setLayer('sizes')}>Guide des tailles</button>
         </nav>
         <div className="header__actions">
-          <a className="icon-btn" href="#/boutique?focus=1" aria-label="Rechercher"><Icon name="search" /></a>
+          <a className="icon-btn" href="/boutique?focus=1" aria-label="Rechercher"><Icon name="search" /></a>
           <button className="icon-btn cart-btn" onClick={() => setLayer('cart')} aria-label="Ouvrir le panier">
             <Icon name="bag" />
             {count > 0 && <span key={bump} className="cart-btn__count bump">{count}</span>}
@@ -50,26 +50,26 @@ function Footer() {
       <div className="container">
         <div className="footer__top">
           <div className="footer__brand">
-            <a href="#/" aria-label="NStore Football, accueil"><Logo light /></a>
+            <a href="/" aria-label="NStore Football, accueil"><Logo light /></a>
             <p>La boutique des maillots de football. Clubs, sélections et éditions spéciales, expédiés sous 48 heures.</p>
             <div className="footer__social">
-              <a href="#/" aria-label="Instagram"><Icon name="instagram" /></a>
-              <a href="#/" aria-label="YouTube"><Icon name="youtube" /></a>
-              <a href="#/" aria-label="Nous écrire"><Icon name="mail" /></a>
+              <a href="/" aria-label="Instagram"><Icon name="instagram" /></a>
+              <a href="/" aria-label="YouTube"><Icon name="youtube" /></a>
+              <a href="/" aria-label="Nous écrire"><Icon name="mail" /></a>
             </div>
           </div>
           <div className="footer__col">
             <h3>Boutique</h3>
-            <a href="#/boutique">Tous les maillots</a>
-            <a href="#/boutique?cat=homme">Homme</a>
-            <a href="#/boutique?cat=femme">Femme</a>
+            <a href="/boutique">Tous les maillots</a>
+            <a href="/boutique?cat=homme">Homme</a>
+            <a href="/boutique?cat=femme">Femme</a>
           </div>
           <div className="footer__col">
             <h3>Aide</h3>
             <button type="button" onClick={() => setLayer('sizes')}>Guide des tailles</button>
-            <a href="#/panier">Mon panier</a>
-            <a href="#/">Livraison et retours</a>
-            <a href="#/">Suivre ma commande</a>
+            <a href="/panier">Mon panier</a>
+            <a href="/">Livraison et retours</a>
+            <a href="/">Suivre ma commande</a>
           </div>
           <div className="footer__col footer__news">
             <h3>Lettre d'information</h3>
@@ -80,9 +80,9 @@ function Footer() {
         <div className="footer__bottom">
           <p>© 2026 NStore Football. Tous droits réservés.</p>
           <div className="footer__legal">
-            <a href="#/">Mentions légales</a>
-            <a href="#/">CGV</a>
-            <a href="#/">Confidentialité</a>
+            <a href="/">Mentions légales</a>
+            <a href="/">CGV</a>
+            <a href="/">Confidentialité</a>
           </div>
           <div className="footer__pay" aria-label="Moyens de paiement acceptés">
             <span>PayPal</span>
@@ -111,8 +111,8 @@ function CartDrawer() {
           {totals.discount > 0 && <div className="sum-row"><span>Code {promo}</span><span className="green">- {fmt(totals.discount)}</span></div>}
           <p className="hint">Taxes incluses. Livraison calculée à la commande.</p>
           <div className="foot-actions">
-            <a className="btn btn--primary btn--block" href="#/commande" onClick={() => setLayer(null)}>Commander · {fmt(totals.after)}</a>
-            <a className="btn btn--ghost btn--block" href="#/panier" onClick={() => setLayer(null)}>Voir le panier</a>
+            <a className="btn btn--primary btn--block" href="/commande" onClick={() => setLayer(null)}>Commander · {fmt(totals.after)}</a>
+            <a className="btn btn--ghost btn--block" href="/panier" onClick={() => setLayer(null)}>Voir le panier</a>
           </div>
         </div>
       )}
@@ -131,12 +131,12 @@ function MenuDrawer() {
         <button className="icon-btn" onClick={close} aria-label="Fermer le menu"><Icon name="x" /></button>
       </div>
       <nav className="mnav">
-        <a href="#/" onClick={close}>Accueil</a>
-        <a href="#/boutique" onClick={close}>Tous les maillots</a>
-        <a href="#/boutique?cat=homme" onClick={close}>Homme</a>
-        <a href="#/boutique?cat=femme" onClick={close}>Femme</a>
+        <a href="/" onClick={close}>Accueil</a>
+        <a href="/boutique" onClick={close}>Tous les maillots</a>
+        <a href="/boutique?cat=homme" onClick={close}>Homme</a>
+        <a href="/boutique?cat=femme" onClick={close}>Femme</a>
         <button type="button" onClick={() => setLayer('sizes')}>Guide des tailles</button>
-        <a href="#/panier" onClick={close}>Mon panier</a>
+        <a href="/panier" onClick={close}>Mon panier</a>
       </nav>
     </aside>
   );

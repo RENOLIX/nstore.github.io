@@ -1,5 +1,5 @@
 /* Catalogue de départ de NStore Football.
-   Ces maillots remplissent la base au premier lancement ; ensuite on les gère depuis la page admin (#/admin). */
+   Ces maillots remplissent la base au premier lancement ; ensuite on les gère depuis la page admin (/admin). */
 
 export const SEED_PRODUCTS = [
   { id: 'bayern-munich-domicile', img: 'p1', name: 'Bayern Munich Domicile', cat: 'homme', league: 'Allemagne', type: 'Domicile',
@@ -109,7 +109,7 @@ export const PAYPAL_EMAIL = 'ounishany@yahoo.fr';
 // Lien de paiement PayPal d'une commande : montant et numéro repris de la commande enregistrée.
 // Au retour, PayPal renvoie sur la page de confirmation (payé ou annulé).
 export function paypalLink(order) {
-  const site = window.location.origin + window.location.pathname;
+  const site = window.location.origin;
   const params = new URLSearchParams({
     cmd: '_xclick',
     business: PAYPAL_EMAIL,
@@ -121,8 +121,8 @@ export function paypalLink(order) {
     no_note: '1',
     lc: 'FR',
     charset: 'utf-8',
-    return: `${site}#/confirmation?paypal=ok`,
-    cancel_return: `${site}#/confirmation?paypal=annule`
+    return: `${site}/confirmation?paypal=ok`,
+    cancel_return: `${site}/confirmation?paypal=annule`
   });
   return 'https://www.paypal.com/cgi-bin/webscr?' + params.toString();
 }

@@ -145,19 +145,44 @@ export function StoreProvider({ children }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/* Routage par ancre : #/, #/boutique?cat=homme, #/produit/<id>, #/panier, #/commande, #/confirmation, #/admin/<section> */
+/* Routage par adresse : /, /boutique?cat=homme, /produit/<id>, /panier, /commande, /confirmation, /admin/<section> */
+// Anciens liens en « #/… » (avant le nom de domaine) : on les convertit en adresse normale.
+if (window.location.hash.startsWith('#/')) {
+  window.history.replaceState(null, '', window.location.hash.slice(1));
+}
 function parse() {
-  const [path, qs] = window.location.hash.replace(/^#\/?/, '').split('?');
-  const seg = path.split('/').filter(Boolean);
-  return { name: seg[0] || 'home', arg: seg[1], params: Object.fromEntries(new URLSearchParams(qs || '')), key: window.location.hash };
+  const seg = window.location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+  const params = Object.fromEntries(new URLSearchParams(window.location.search));
+  return { name: seg[0] || 'home', arg: seg[1], params, key: window.location.pathname + window.location.search };
+}
+const NAV = 'nstore:navigate';
+export const go = (to, { replace = false } = {}) => {
+  if (to === window.location.pathname + window.location.search) return;
+  window.history[replace ? 'replaceState' : 'pushState'](null, '', to);
+  window.dispatchEvent(new Event(NAV));
+};
+// Lien interne (même site, clic normal) : on change de page sans recharger
+function onLinkClick(e) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest('a[href]');
+  if (!a || a.target || a.hasAttribute('download')) return;
+  const href = a.getAttribute('href');
+  if (!href.startsWith('/') || href.startsWith('//')) return;
+  e.preventDefault();
+  go(href);
 }
 export function useRoute() {
   const [route, setRoute] = useState(parse);
   useEffect(() => {
     const on = () => { setRoute(parse()); window.scrollTo(0, 0); };
-    window.addEventListener('hashchange', on);
-    return () => window.removeEventListener('hashchange', on);
+    window.addEventListener('popstate', on);
+    window.addEventListener(NAV, on);
+    return () => { window.removeEventListener('popstate', on); window.removeEventListener(NAV, on); };
   }, []);
   return route;
 }
-export const go = (hash) => { window.location.hash = hash; };
+// Un seul écouteur de clics pour tout le site
+if (typeof document !== 'undefined' && !window.__nstoreLinks) {
+  window.__nstoreLinks = true;
+  document.addEventListener('click', onLinkClick);
+}

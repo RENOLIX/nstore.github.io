@@ -1,4 +1,4 @@
-/* Espace administrateur NStore Football : #/admin, #/admin/commandes, #/admin/produits, #/admin/codes
+/* Espace administrateur NStore Football : /admin, /admin/commandes, /admin/produits, /admin/codes
    Toutes les lectures et écritures passent par src/lib/backend.js (local aujourd'hui, Supabase ensuite). */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ALL_SIZES, CATS, DEFAULT_SIZES, discountPct, fmt, ORDER_STATUS, PAYMENTS } from '../data.js';
@@ -96,10 +96,10 @@ export default function Admin({ section }) {
   return (
     <div className="adm">
       <aside className="adm-side">
-        <a className="adm-brand" href="#/admin"><Logo light /><span>Admin</span></a>
+        <a className="adm-brand" href="/admin"><Logo light /><span>Admin</span></a>
         <nav className="adm-nav" aria-label="Sections de l'admin">
           {allowed.map(([k, label, ic]) => (
-            <a key={k} href={k === 'tableau' ? '#/admin' : `#/admin/${k}`} className={current[0] === k ? 'is-on' : ''} aria-current={current[0] === k ? 'page' : undefined}>
+            <a key={k} href={k === 'tableau' ? '/admin' : `/admin/${k}`} className={current[0] === k ? 'is-on' : ''} aria-current={current[0] === k ? 'page' : undefined}>
               <I n={ic} /><span>{label}</span>
               {k === 'commandes' && todo > 0 && <b className="adm-count">{todo}</b>}
             </a>
@@ -110,7 +110,7 @@ export default function Admin({ section }) {
             <span className="adm-avatar">{initials({ name: session.name, email: session.user.email })}</span>
             <span className="adm-me__txt"><strong>{session.name || session.user.email}</strong><small>{ROLES[session.role]}</small></span>
           </div>
-          <a href="#/"><I n="store" /><span>Voir la boutique</span></a>
+          <a href="/"><I n="store" /><span>Voir la boutique</span></a>
           <button type="button" onClick={logout}><I n="logout" /><span>Se déconnecter</span></button>
         </div>
       </aside>
@@ -195,7 +195,7 @@ function Login({ onDone }) {
         <button className="adm-btn adm-btn--primary adm-btn--block" disabled={busy}>
           <I n="lock" />{busy ? 'Un instant…' : !real ? "Entrer dans l'admin" : setup ? 'Créer mon compte' : 'Se connecter'}
         </button>
-        <a className="adm-login__back" href="#/">Retour à la boutique</a>
+        <a className="adm-login__back" href="/">Retour à la boutique</a>
       </form>
     </div>
   );
@@ -210,7 +210,7 @@ function NoAccess({ session, onLogout }) {
         <h1>Accès en attente</h1>
         <p className="adm-muted">Le compte {session.user.email} n'a pas encore de rôle. Demandez à un administrateur de vous en attribuer un depuis la page Utilisateurs.</p>
         <button type="button" className="adm-btn adm-btn--ghost adm-btn--block" onClick={onLogout}><I n="logout" />Se déconnecter</button>
-        <a className="adm-login__back" href="#/">Retour à la boutique</a>
+        <a className="adm-login__back" href="/">Retour à la boutique</a>
       </div>
     </div>
   );
@@ -314,7 +314,7 @@ function Dashboard({ orders, catalog }) {
 
       <div className="adm-cols">
         <section className="adm-card">
-          <div className="adm-card__head"><h2>Dernières commandes</h2><a className="adm-link" href="#/admin/commandes">Tout voir <I n="arrow" s={15} /></a></div>
+          <div className="adm-card__head"><h2>Dernières commandes</h2><a className="adm-link" href="/admin/commandes">Tout voir <I n="arrow" s={15} /></a></div>
           {orders.length === 0 ? (
             <Empty icon="orders" title="Aucune commande pour l'instant">Passez une commande sur la boutique : elle apparaîtra ici.</Empty>
           ) : (
